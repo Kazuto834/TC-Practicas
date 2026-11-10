@@ -2,15 +2,26 @@
 Módulo de Algoritmos Formales para Autómatas No Deterministas (Práctica 3).
 
 Proyecto: Prácticas de Teoría de la Computación (ESCOM-IPN)
-Autor: Mario García Castillo (Kazuto834) <luilligar834@gmail.com>
-Responsabilidad: Simulación directa con lambda-clausura, eliminación de transiciones lambda
-                y construcción de subconjuntos (AFN -> AFD) de subconjuntos alcanzables.
+Autores: Mario García Castillo (Kazuto834) & Antonio Navarro Domínguez (A7LAS-1)
+Responsabilidad: Simulación directa con lambda-clausura, cálculo de clausuras lambda,
+                eliminación formal de transiciones lambda y construcción de subconjuntos
+                (AFN -> AFD) de subconjuntos alcanzables paso a paso.
 """
 
 from __future__ import annotations
-from typing import Dict, List, Set, Tuple, Any
+from typing import Dict, List, Set, Tuple, Any, Optional
 from collections import deque
 from automata import Automata, Transicion
+
+
+def calcular_clausura_lambda(auto: Automata, estado: str) -> Set[str]:
+    """Calcula y retorna la lambda-clausura de un estado individual."""
+    return auto.clausura_lambda({estado})
+
+
+def calcular_todas_clausuras_lambda(auto: Automata) -> Dict[str, Set[str]]:
+    """Calcula y retorna la lambda-clausura para cada uno de los estados del autómata."""
+    return {q: auto.clausura_lambda({q}) for q in sorted(list(auto.estados))}
 
 
 def simulacion_directa_paso_a_paso(auto: Automata, cadena: str) -> Tuple[bool, List[Dict[str, Any]]]:
@@ -21,10 +32,14 @@ def simulacion_directa_paso_a_paso(auto: Automata, cadena: str) -> Tuple[bool, L
     return auto.simular_cadena(cadena)
 
 
-def eliminar_transiciones_lambda(auto: Automata) -> Automata:
+def eliminar_transiciones_lambda_detallado(auto: Automata) -> Tuple[Automata, Dict[str, Any]]:
     """
-    Transforma un AFND-lambda en un AFN sin transiciones lambda que reconoce el mismo lenguaje.
-    
+    Transforma un AFND-lambda en un AFN sin transiciones lambda que reconoce el mismo lenguaje,
+    generando una bitácora detallada paso a paso de:
+      - Lambda-clausura de cada estado.
+      - Nuevos estados que pasan a ser de aceptación y la justificación.
+      - Nuevas transiciones añadidas con origen, símbolo y destino.
+      
     Axiomas formales (Hopcroft et al., 2007; Linz, 2016):
       delta'(q, a) = lambda-cl( delta( lambda-cl(q), a ) )
       F' = { q in Q | lambda-cl(q) cap F != vacio }
@@ -37,41 +52,73 @@ def eliminar_transiciones_lambda(auto: Automata) -> Automata:
         tipo="AFND"
     )
 
-    # 1. Determinar nuevos estados de aceptación F'
+    clausuras = calcular_todas_clausuras_lambda(auto)
     nuevos_finales: Set[str] = set()
-    for q in auto.estados:
-        clausura_q = auto.clausura_lambda({q})
-        if any(f in auto.estados_aceptacion for f in clausura_q):
+    razones_finales: Dict[str, List[str]] = {}
+
+    for q in sorted(list(auto.estados)):
+        clausura_q = clausuras[q]
+        inter = clausura_q.intersection(auto.estados_aceptacion)
+        if inter:
             nuevos_finales.add(q)
+            razones_finales[q] = sorted(list(inter))
+
     afn_sin_lambda.estados_aceptacion = nuevos_finales
 
-    # 2. Registrar estados en el nuevo autómata con metadatos
-    for q in auto.estados:
+    for q in sorted(list(auto.estados)):
         afn_sin_lambda.agregar_estado(
             nombre=q,
             es_inicial=(q == auto.estado_inicial),
             es_final=(q in nuevos_finales)
         )
 
-    # 3. Calcular nuevas transiciones delta'(q, a) para cada a in Sigma
-    for q in auto.estados:
-        clausura_q = auto.clausura_lambda({q})
-        for a in auto.alfabeto:
-            # delta(lambda-cl(q), a)
+    transiciones_agregadas: List[Dict[str, Any]] = []
+
+    for q in sorted(list(auto.estados)):
+        clausura_q = clausuras[q]
+        for a in sorted(list(auto.alfabeto)):
             destinos_directos = auto.mover(clausura_q, a)
-            # lambda-cl( destinos_directos )
             destinos_clausurados = auto.clausura_lambda(destinos_directos)
-            for dest in destinos_clausurados:
+            for dest in sorted(list(destinos_clausurados)):
                 afn_sin_lambda.agregar_transicion(q, a, dest)
+                transiciones_agregadas.append({
+                    "origen": q,
+                    "simbolo": a,
+                    "destino": dest,
+                    "clausura_origen": sorted(list(clausura_q)),
+                    "destinos_directos": sorted(list(destinos_directos)),
+                    "destinos_clausurados": sorted(list(destinos_clausurados))
+                })
 
     afn_sin_lambda._actualizar_tipo()
-    return afn_sin_lambda
+
+    bitacora = {
+        "clausuras": {q: sorted(list(clausuras[q])) for q in clausuras},
+        "estados_aceptacion_originales": sorted(list(auto.estados_aceptacion)),
+        "estados_aceptacion_nuevos": sorted(list(nuevos_finales)),
+        "razones_aceptacion": {
+            q: f"La λ-clausura {sorted(list(clausuras[q]))} contiene estado(s) final(es): {razones_finales[q]}"
+            for q in nuevos_finales
+        },
+        "total_transiciones_agregadas": len(transiciones_agregadas),
+        "transiciones_agregadas": transiciones_agregadas
+    }
+
+    return afn_sin_lambda, bitacora
 
 
-def construccion_subconjuntos(auto: Automata) -> Automata:
+def eliminar_transiciones_lambda(auto: Automata) -> Automata:
+    """Función de compatibilidad: retorna directamente el AFN sin transiciones lambda."""
+    afn, _ = eliminar_transiciones_lambda_detallado(auto)
+    return afn
+
+
+def construccion_subconjuntos_detallada(auto: Automata) -> Tuple[Automata, List[Dict[str, Any]]]:
     """
     Transforma un AFN (o AFN-lambda) en un AFD determinista equivalente.
     Construye exclusivamente los subconjuntos alcanzables a partir del estado inicial.
+    Retorna el AFD resultante y la bitácora paso a paso de la generación de la tabla de transiciones,
+    indicando qué subconjuntos resultan de aceptación y por qué.
     
     Axiomas formales:
       S0 = lambda-cl({q0})
@@ -99,27 +146,53 @@ def construccion_subconjuntos(auto: Automata) -> Automata:
     es_final_s0 = any(f in auto.estados_aceptacion for f in s0_set)
     afd.agregar_estado(nombre_s0, es_inicial=True, es_final=es_final_s0)
 
-    # Cola de subconjuntos por explorar: (nombre_str, set_de_estados)
     cola = deque([(nombre_s0, s0_set)])
     visitados: Dict[str, Set[str]] = {nombre_s0: s0_set}
+    tabla_pasos: List[Dict[str, Any]] = []
 
+    paso_idx = 1
     while cola:
         nombre_actual, set_actual = cola.popleft()
+        finales_en_subconjunto = sorted(list(set_actual.intersection(auto.estados_aceptacion)))
+        es_final_actual = bool(finales_en_subconjunto)
+
+        fila_transiciones: Dict[str, str] = {}
+        descubiertos_este_paso: List[str] = []
 
         for a in sorted(list(auto.alfabeto)):
-            # Mover y clausurar
             destinos_directos = auto.mover(set_actual, a)
             destinos_clausurados = auto.clausura_lambda(destinos_directos)
             nombre_destino = nombre_subconjunto(destinos_clausurados)
+            fila_transiciones[a] = nombre_destino
 
             if nombre_destino not in visitados:
                 visitados[nombre_destino] = destinos_clausurados
-                es_final = any(f in auto.estados_aceptacion for f in destinos_clausurados)
-                afd.agregar_estado(nombre_destino, es_inicial=False, es_final=es_final)
+                es_final_dest = any(f in auto.estados_aceptacion for f in destinos_clausurados)
+                afd.agregar_estado(nombre_destino, es_inicial=False, es_final=es_final_dest)
                 cola.append((nombre_destino, destinos_clausurados))
+                descubiertos_este_paso.append(nombre_destino)
 
             afd.agregar_transicion(nombre_actual, a, nombre_destino)
 
-    afd._actualizar_tipo()
-    return afd
+        tabla_pasos.append({
+            "paso": paso_idx,
+            "subconjunto": nombre_actual,
+            "estados_individuales": sorted(list(set_actual)),
+            "es_final": es_final_actual,
+            "razon_aceptacion": (
+                f"Contiene estado(s) final(es) de aceptación: {finales_en_subconjunto}"
+                if es_final_actual else "No contiene ningún estado de aceptación original."
+            ),
+            "transiciones": fila_transiciones,
+            "nuevos_subconjuntos_descubiertos": descubiertos_este_paso
+        })
+        paso_idx += 1
 
+    afd._actualizar_tipo()
+    return afd, tabla_pasos
+
+
+def construccion_subconjuntos(auto: Automata) -> Automata:
+    """Función de compatibilidad: retorna directamente el AFD determinista por subconjuntos."""
+    afd, _ = construccion_subconjuntos_detallada(auto)
+    return afd
