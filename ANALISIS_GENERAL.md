@@ -141,3 +141,4 @@ flowchart TD
 1. **Inmutabilidad del Código Previo:** Las funciones existentes de `src/lenguajes.py` y `src/app.py` no deben romperse ni alterarse.
 2. **Independencia del Núcleo Teórico:** Toda la lógica matemática (autómatas, formatos, conversiones, parsers) reside en módulos puros de Python sin dependencia de Flet ni de bibliotecas externas prohibidas.
 3. **Determinismo y Rigor Académico:** Cada algoritmo implementado cuenta con demostración y sustento en las obras de referencia (Hopcroft et al., Sipser, Linz, Sudkamp).
+

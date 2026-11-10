@@ -112,3 +112,4 @@ def test_traza_paso_a_paso():
     assert len(traza) == 2  # Paso 0 (inicio) y Paso 1
     assert traza[1]["simbolo_leido"] == "x"
     assert traza[1]["transiciones_tomadas"] == [{"desde": "A", "lee": "x", "hacia": "B"}]
+

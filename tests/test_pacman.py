@@ -40,3 +40,4 @@ def test_simulacion_pacman(automata_pacman, cadena, esperado, descripcion):
     """Prueba las 10 cadenas obligatorias del Ejercicio 5."""
     obtenido, traza = automata_pacman.simular_cadena(cadena)
     assert obtenido == esperado, f"Fallo en {cadena}: esperado {esperado}, obtenido {obtenido}. Traza: {traza}"
+

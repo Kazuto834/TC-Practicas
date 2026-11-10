@@ -85,3 +85,4 @@ def test_roundtrip_xml(automata_ejemplo_anexo3):
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
+

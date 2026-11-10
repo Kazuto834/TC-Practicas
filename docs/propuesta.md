@@ -53,3 +53,4 @@ Se desarrollará una herramienta en Python puro denominada **`AuthTrace-FA`**:
 * **Sintético:** Generación de un conjunto de pruebas con más de 10,000 trazas sintéticas (válidas y ataques simulados de robo de código de autorización y CSRF) generadas algorítmicamente.
 * **Empírico:** Evaluación contra trazas de pruebas reales generadas en un laboratorio de pruebas de penetración utilizando la suite Burp Suite y OWASP Juice Shop.
 * **Métricas de Éxito:** 100 % de detección de trazas maliciosas (cero falsos negativos) y latencia de validación menor a 0.5 microsegundos por transacción procesada.
+

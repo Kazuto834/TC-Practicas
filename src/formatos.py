@@ -300,3 +300,4 @@ class FormatosAutomata:
         header = b'<?xml version="1.0" encoding="UTF-8"?>\n'
         with open(ruta_salida, "wb") as f:
             f.write(header + xml_str)
+

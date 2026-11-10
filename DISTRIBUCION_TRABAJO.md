@@ -67,3 +67,4 @@ De acuerdo con las directrices de integridad:
   * Para **A7LAS-1**: `Antonio Navarro Domínguez <tonyex1400@gmail.com>`
   * Para **Kazuto834**: `Mario García Castillo <luilligar834@gmail.com>`
 * La integración final se realiza mediante Pull Requests detallados que documentan la contribución técnica individual de cada autor.
+

@@ -297,3 +297,4 @@ class Automata:
                 errores.append(f"Transición con símbolo '{t.simbolo}' que no pertenece a Sigma.")
 
         return len(errores) == 0, errores
+
