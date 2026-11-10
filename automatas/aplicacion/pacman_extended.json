@@ -1,0 +1,146 @@
+{
+  "tipo": "AFD",
+  "alfabeto": [
+    "c",
+    "f",
+    "h",
+    "p",
+    "r",
+    "t"
+  ],
+  "estados": [
+    "Ambush",
+    "Chase",
+    "Eaten",
+    "Frightened",
+    "Rage",
+    "Scatter"
+  ],
+  "inicial": "Scatter",
+  "aceptacion": [
+    "Ambush",
+    "Chase",
+    "Rage"
+  ],
+  "transiciones": [
+    {
+      "desde": "Ambush",
+      "lee": "p",
+      "hacia": [
+        "Frightened"
+      ]
+    },
+    {
+      "desde": "Ambush",
+      "lee": "r",
+      "hacia": [
+        "Rage"
+      ]
+    },
+    {
+      "desde": "Ambush",
+      "lee": "t",
+      "hacia": [
+        "Chase"
+      ]
+    },
+    {
+      "desde": "Chase",
+      "lee": "f",
+      "hacia": [
+        "Ambush"
+      ]
+    },
+    {
+      "desde": "Chase",
+      "lee": "p",
+      "hacia": [
+        "Frightened"
+      ]
+    },
+    {
+      "desde": "Chase",
+      "lee": "r",
+      "hacia": [
+        "Rage"
+      ]
+    },
+    {
+      "desde": "Chase",
+      "lee": "t",
+      "hacia": [
+        "Scatter"
+      ]
+    },
+    {
+      "desde": "Eaten",
+      "lee": "h",
+      "hacia": [
+        "Scatter"
+      ]
+    },
+    {
+      "desde": "Frightened",
+      "lee": "c",
+      "hacia": [
+        "Eaten"
+      ]
+    },
+    {
+      "desde": "Frightened",
+      "lee": "p",
+      "hacia": [
+        "Frightened"
+      ]
+    },
+    {
+      "desde": "Frightened",
+      "lee": "t",
+      "hacia": [
+        "Chase"
+      ]
+    },
+    {
+      "desde": "Rage",
+      "lee": "p",
+      "hacia": [
+        "Frightened"
+      ]
+    },
+    {
+      "desde": "Rage",
+      "lee": "t",
+      "hacia": [
+        "Chase"
+      ]
+    },
+    {
+      "desde": "Scatter",
+      "lee": "f",
+      "hacia": [
+        "Ambush"
+      ]
+    },
+    {
+      "desde": "Scatter",
+      "lee": "p",
+      "hacia": [
+        "Frightened"
+      ]
+    },
+    {
+      "desde": "Scatter",
+      "lee": "r",
+      "hacia": [
+        "Rage"
+      ]
+    },
+    {
+      "desde": "Scatter",
+      "lee": "t",
+      "hacia": [
+        "Chase"
+      ]
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 # BASE DE DATOS Y CONTENEDORES
 # IGNORA ARCHIVOS DE PYTHON
 **/venv/
+.venv/
 __pycache__/
 *.pyc
 .pytest_cache/
@@ -23,3 +24,6 @@ desktop.ini
 *.tmp
 *.bak
 *~
+*.pdf
+CONTEXTO/
+

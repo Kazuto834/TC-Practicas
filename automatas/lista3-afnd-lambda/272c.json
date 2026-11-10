@@ -1,0 +1,84 @@
+{
+  "tipo": "AFND-lambda",
+  "alfabeto": [
+    "a",
+    "b"
+  ],
+  "estados": [
+    "q0",
+    "q1",
+    "q2",
+    "q3",
+    "q4",
+    "q5",
+    "q6",
+    "q7",
+    "q8"
+  ],
+  "inicial": "q0",
+  "aceptacion": [
+    "q8"
+  ],
+  "transiciones": [
+    {
+      "desde": "q0",
+      "lee": "",
+      "hacia": [
+        "q1",
+        "q3",
+        "q5"
+      ]
+    },
+    {
+      "desde": "q1",
+      "lee": "a",
+      "hacia": [
+        "q2"
+      ]
+    },
+    {
+      "desde": "q2",
+      "lee": "",
+      "hacia": [
+        "q1",
+        "q5"
+      ]
+    },
+    {
+      "desde": "q3",
+      "lee": "b",
+      "hacia": [
+        "q4"
+      ]
+    },
+    {
+      "desde": "q4",
+      "lee": "",
+      "hacia": [
+        "q3",
+        "q5"
+      ]
+    },
+    {
+      "desde": "q5",
+      "lee": "a",
+      "hacia": [
+        "q6"
+      ]
+    },
+    {
+      "desde": "q6",
+      "lee": "b",
+      "hacia": [
+        "q7"
+      ]
+    },
+    {
+      "desde": "q7",
+      "lee": "b",
+      "hacia": [
+        "q8"
+      ]
+    }
+  ]
+}
