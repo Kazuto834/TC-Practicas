@@ -25,6 +25,11 @@
 | **QA-P2-07** | `test_automata.py` | `test_traza_paso_a_paso`: Registro formal de transiciones tomadas. | Lista cronológica con metadatos de bifurcación. | Transición `A -> x -> B` registrada exactamente. | **APROBADO** |
 | **QA-P2-08** | `test_pacman.py`   | `test_estructura_pacman`: Formalización de 6 estados y 2 nuevos eventos. | Estados y aceptación configurados. | Estados $Q$ y $F$ comprobados con precisión. | **APROBADO** |
 | **QA-P2-09** | `test_pacman.py`   | `test_simulacion_pacman`: Batería de 10 cadenas sobre el modelo de Pac-Man. | Resultados de letalidad coincidentes. | 10 de 10 cadenas con estado de salida exacto. | **APROBADO** |
+| **QA-P2-10** | `test_formatos.py` | `test_conversion_cruzada_formatos`: Cadena de conversión JFF $\to$ JSON $\to$ XML $\to$ JFF. | Preservar quíntupla formal y equivalencia en simulación de cadenas. | 100 % de equivalencia comprobada en todas las etapas. | **APROBADO** |
+| **QA-P2-11** | `test_formatos.py` | `test_verificacion_anexo3_elementos_lambda`: Serialización de $\lambda$ conforme al Anexo 3. | `<read/>`/`<read />` en JFF, `"lee": ""` en JSON, `lee=""` en XML. | Estructura exacta validada en archivos serializados. | **APROBADO** |
+| **QA-P2-12** | `test_automata.py` | `test_afd_rechazo_simbolos_invalidos_y_estados_muertos`: Rechazo formal de símbolos fuera de $\Sigma$ y dead states. | Rechazar formalmente sin excepciones no controladas. | Retorno de `(False, traza)` consistente verificado. | **APROBADO** |
+| **QA-P2-13** | `test_automata.py` | `test_afnd_bifurcaciones_multiples_con_caminos_muertos`: Bifurcación simultánea con ramas muertas vs aceptantes. | La rama aceptante debe otorgar aceptación global concurrente. | Aceptación formal verificada con rama activa en $F$. | **APROBADO** |
+| **QA-P2-14** | `test_automata.py` | `test_afnd_lambda_cadena_multiple`: Transitividad encadenada de $\lambda$-clausuras múltiples ($q_0 \dots q_3$). | $\lambda\text{-cl}(q_0)$ debe contener todos los estados alcanzables transitivamente. | Clausura formal y aceptación inmediata comprobadas. | **APROBADO** |
 | **QA-P3-01** | `test_algoritmos_p3.py`| Cálculo de $\lambda$-clausura formal (Práctica 3). | $\lambda\text{-cl}(q)$ cerrado reflexivo-transitivo. | Pendiente de desarrollo P3. | **PENDIENTE** |
 | **QA-P3-02** | `test_algoritmos_p3.py`| Eliminación de transiciones $\lambda$ (Práctica 3). | AFN equivalente sin transiciones vacías. | Pendiente de desarrollo P3. | **PENDIENTE** |
 | **QA-P3-03** | `test_algoritmos_p3.py`| Construcción de subconjuntos AFN $\to$ AFD (Práctica 3). | Subconjuntos alcanzables y tabla determinista. | Pendiente de desarrollo P3. | **PENDIENTE** |
@@ -36,7 +41,7 @@
 ---
 
 ## 2. Métricas Actuales de Ejecución
-* **Total de Pruebas Automatizadas Ejecutadas:** 22
-* **Aprobadas:** 22 (100 %)
+* **Total de Pruebas Automatizadas Ejecutadas:** 27
+* **Aprobadas:** 27 (100 %)
 * **Fallidas:** 0 (0 %)
-* **Tiempo de Ejecución:** 0.29 segundos
+* **Tiempo de Ejecución:** ~0.20 segundos

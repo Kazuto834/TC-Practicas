@@ -112,3 +112,67 @@ def test_traza_paso_a_paso():
     assert len(traza) == 2  # Paso 0 (inicio) y Paso 1
     assert traza[1]["simbolo_leido"] == "x"
     assert traza[1]["transiciones_tomadas"] == [{"desde": "A", "lee": "x", "hacia": "B"}]
+
+
+def test_afd_rechazo_simbolos_invalidos_y_estados_muertos():
+    """Comprueba el rechazo formal de cadenas con símbolos inválidos o sin transición."""
+    auto = Automata()
+    auto.agregar_estado("q0", es_inicial=True, es_final=False)
+    auto.agregar_estado("q1", es_inicial=False, es_final=True)
+    auto.agregar_transicion("q0", "a", "q1")
+
+    # Símbolo no perteneciente al alfabeto o sin transición desde q0
+    assert auto.simular_cadena("b")[0] is False
+    assert auto.simular_cadena("z")[0] is False
+
+    # Estado muerto: desde q1 no hay transiciones para ningún símbolo
+    assert auto.simular_cadena("aa")[0] is False
+    assert auto.simular_cadena("ab")[0] is False
+
+
+def test_afnd_bifurcaciones_multiples_con_caminos_muertos():
+    """
+    Comprueba que el AFND explore ramas concurrentes donde una rama muere
+    (callejón sin salida) pero otra llega a un estado de aceptación.
+    """
+    auto = Automata()
+    auto.agregar_estado("q0", es_inicial=True, es_final=False)
+    auto.agregar_estado("q1", es_inicial=False, es_final=False)
+    auto.agregar_estado("q2", es_inicial=False, es_final=True)
+
+    # Desde q0 con 'a': va a q1 (rama muerta) y a q2 (rama aceptante)
+    auto.agregar_transicion("q0", "a", "q1")
+    auto.agregar_transicion("q0", "a", "q2")
+
+    # Cadena 'a' debe ser aceptada porque q2 es final, aunque q1 muera
+    aceptada, traza = auto.simular_cadena("a")
+    assert aceptada is True
+    assert "q2" in traza[1]["clausura_posterior"]
+
+    # Cadena 'ab' debe morir en ambas ramas
+    assert auto.simular_cadena("ab")[0] is False
+
+
+def test_afnd_lambda_cadena_multiple():
+    """
+    Verifica que la lambda-clausura sea estrictamente transitiva a lo largo de
+    múltiples transiciones lambda encadenadas (q0 -> q1 -> q2 -> q3).
+    """
+    auto = Automata()
+    auto.agregar_estado("q0", es_inicial=True, es_final=False)
+    auto.agregar_estado("q1", es_inicial=False, es_final=False)
+    auto.agregar_estado("q2", es_inicial=False, es_final=False)
+    auto.agregar_estado("q3", es_inicial=False, es_final=True)
+
+    auto.agregar_transicion("q0", "", "q1")
+    auto.agregar_transicion("q1", "", "q2")
+    auto.agregar_transicion("q2", "", "q3")
+
+    clausura_q0 = auto.clausura_lambda({"q0"})
+    assert clausura_q0 == {"q0", "q1", "q2", "q3"}
+
+    # Por transitividad lambda, la cadena vacía debe ser aceptada de inmediato
+    aceptada, traza = auto.simular_cadena("")
+    assert aceptada is True
+    assert traza[0]["es_aceptacion"] is True
+
