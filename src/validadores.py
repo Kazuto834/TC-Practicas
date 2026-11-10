@@ -96,7 +96,12 @@ _EMAIL_ER_FORMAL = (
     "(a+b+...+z+A+...+Z + ε)"
 )
 
-_EMAIL_ER_PYTHON = r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,6}"
+_EMAIL_ER_PYTHON = (
+    r"[a-zA-Z0-9_+-]+(?:\.[a-zA-Z0-9_+-]+)*@"
+    r"[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?"
+    r"(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*"
+    r"\.[a-zA-Z]{2,6}"
+)
 
 _TLDS = [
     "com", "mx", "net", "org", "edu", "gob", "info", "io", "dev",
@@ -127,7 +132,7 @@ def _generar_emails_validos() -> List[str]:
     validos.extend(fijos)
 
     # Generación algorítmica
-    while len(validos) < 210:
+    while len(validos) < 265:
         local_len = _RNG.randint(1, 15)
         local = _rand_str(_EMAIL_LOCAL_CHARS, local_len, local_len)
         # Asegurar que empiece con alfanumérico
@@ -151,45 +156,45 @@ def _generar_emails_validos() -> List[str]:
 
 
 def _generar_emails_invalidos() -> List[str]:
-    """Genera ≥ 200 direcciones de correo inválidas."""
+    """Genera ≥ 260 direcciones de correo inválidas."""
     invalidos: List[str] = []
 
     # Categorías de errores
     # 1. Sin @
-    for _ in range(30):
+    for _ in range(35):
         invalidos.append(_rand_alphanum_lower(3, 12) + "dominio.com")
 
     # 2. Múltiples @
-    for _ in range(25):
+    for _ in range(30):
         invalidos.append(
             _rand_alphanum_lower(2, 6) + "@" + _rand_alphanum_lower(2, 6) +
             "@" + _rand_alphanum_lower(2, 6) + ".com"
         )
 
     # 3. Sin dominio después de @
-    for _ in range(25):
+    for _ in range(30):
         invalidos.append(_rand_alphanum_lower(3, 8) + "@")
 
     # 4. Sin local antes de @
-    for _ in range(25):
+    for _ in range(30):
         invalidos.append("@" + _rand_alphanum_lower(3, 8) + ".com")
 
     # 5. TLD demasiado corto (1 carácter)
-    for _ in range(25):
+    for _ in range(30):
         invalidos.append(
             _rand_alphanum_lower(3, 8) + "@" + _rand_alphanum_lower(3, 8) +
             "." + _RNG.choice(string.ascii_lowercase)
         )
 
     # 6. TLD demasiado largo (> 6 caracteres)
-    for _ in range(25):
+    for _ in range(30):
         invalidos.append(
             _rand_alphanum_lower(3, 8) + "@" + _rand_alphanum_lower(3, 8) +
             "." + _rand_alpha_lower(7, 10)
         )
 
     # 7. Caracteres prohibidos en local
-    for _ in range(20):
+    for _ in range(30):
         bad_char = _RNG.choice("!#$%^&*()={}[]|\\:\";<>,?/")
         pos = _RNG.randint(0, 4)
         base = list(_rand_alphanum_lower(5, 8))
@@ -197,14 +202,14 @@ def _generar_emails_invalidos() -> List[str]:
         invalidos.append("".join(base) + "@dominio.com")
 
     # 8. Dominio vacío / sólo punto
-    for _ in range(15):
+    for _ in range(25):
         invalidos.append(_rand_alphanum_lower(3, 8) + "@.com")
 
     # 9. Cadena vacía y espacios
     invalidos.extend(["", " ", "   ", "@@", ".@.", "user@ .com"])
 
     # 10. Sin punto en dominio
-    for _ in range(15):
+    for _ in range(25):
         invalidos.append(
             _rand_alphanum_lower(3, 8) + "@" + _rand_alphanum_lower(5, 10)
         )
@@ -234,10 +239,10 @@ _PHONE_ER_FORMAL = (
 #   (55)-1234-5678
 #   +52 (55) 1234 5678
 _PHONE_ER_PYTHON = (
-    r"(?:\+52[\s-]?)?"               # prefijo internacional opcional
-    r"(?:\(?\d{2}\)?[\s-]?)"         # lada 2 dígitos con paréntesis opcional
-    r"\d{4}[\s-]?"                   # primeros 4 dígitos del número
-    r"\d{4}"                         # últimos 4 dígitos
+    r"(?:\+?52\s?1?[\s-]?)?"          # prefijo internacional opcional (+52, 52, +521, +52 1)
+    r"(?:(?:\([2-9]\d\)|[2-9]\d)[\s-]?)"  # lada 2 dígitos (20-99) con paréntesis balanceados opcionales
+    r"\d{4}[\s-]?"                    # primeros 4 dígitos del número
+    r"\d{4}"                          # últimos 4 dígitos
 )
 
 # Ladas reales frecuentes de México
@@ -250,7 +255,7 @@ _LADAS_MX = [
 
 
 def _generar_telefonos_validos() -> List[str]:
-    """Genera ≥ 200 teléfonos mexicanos válidos en distintos formatos."""
+    """Genera ≥ 260 teléfonos mexicanos válidos en distintos formatos."""
     validos: List[str] = []
 
     def _tel_parts():
@@ -260,42 +265,42 @@ def _generar_telefonos_validos() -> List[str]:
         return lada, parte1, parte2
 
     # Formato 1: 10 dígitos corridos — 5512345678
-    for _ in range(40):
+    for _ in range(45):
         l, p1, p2 = _tel_parts()
         validos.append(f"{l}{p1}{p2}")
 
     # Formato 2: con espacios — 55 1234 5678
-    for _ in range(35):
+    for _ in range(40):
         l, p1, p2 = _tel_parts()
         validos.append(f"{l} {p1} {p2}")
 
     # Formato 3: con guiones — 55-1234-5678
-    for _ in range(35):
+    for _ in range(40):
         l, p1, p2 = _tel_parts()
         validos.append(f"{l}-{p1}-{p2}")
 
     # Formato 4: +52 con espacios — +52 55 1234 5678
-    for _ in range(30):
+    for _ in range(35):
         l, p1, p2 = _tel_parts()
         validos.append(f"+52 {l} {p1} {p2}")
 
     # Formato 5: +52 con guiones — +52-55-1234-5678
-    for _ in range(20):
+    for _ in range(30):
         l, p1, p2 = _tel_parts()
         validos.append(f"+52-{l}-{p1}-{p2}")
 
     # Formato 6: (lada) con espacio — (55) 1234 5678
-    for _ in range(25):
+    for _ in range(30):
         l, p1, p2 = _tel_parts()
         validos.append(f"({l}) {p1} {p2}")
 
     # Formato 7: (lada) con guión — (55) 1234-5678
-    for _ in range(15):
+    for _ in range(25):
         l, p1, p2 = _tel_parts()
         validos.append(f"({l}) {p1}-{p2}")
 
     # Formato 8: +52 (lada) — +52 (55) 1234 5678
-    for _ in range(15):
+    for _ in range(25):
         l, p1, p2 = _tel_parts()
         validos.append(f"+52 ({l}) {p1} {p2}")
 
@@ -303,40 +308,40 @@ def _generar_telefonos_validos() -> List[str]:
 
 
 def _generar_telefonos_invalidos() -> List[str]:
-    """Genera ≥ 200 teléfonos inválidos."""
+    """Genera ≥ 260 teléfonos inválidos."""
     invalidos: List[str] = []
 
     # 1. Muy pocos dígitos (< 10)
     for n in range(1, 10):
-        for _ in range(3):
+        for _ in range(5):
             invalidos.append(_rand_digit_str(n))
 
     # 2. Demasiados dígitos (> 10, sin código de país)
-    for _ in range(25):
+    for _ in range(35):
         invalidos.append(_rand_digit_str(_RNG.randint(11, 15)))
 
     # 3. Contiene letras
-    for _ in range(25):
+    for _ in range(35):
         base = list(_rand_digit_str(10))
         pos = _RNG.randint(0, 9)
         base[pos] = _RNG.choice(string.ascii_lowercase)
         invalidos.append("".join(base))
 
     # 4. Caracteres especiales no válidos
-    for _ in range(25):
+    for _ in range(35):
         bad = _RNG.choice("!@#$%^&*=_[]{}|\\:;\"'<>,?/")
         base = list(_rand_digit_str(10))
         base.insert(_RNG.randint(0, 9), bad)
         invalidos.append("".join(base))
 
     # 5. Código de país incorrecto
-    for _ in range(20):
-        cc = _RNG.choice(["+1", "+44", "+34", "+49", "+00", "+521", "+5"])
+    for _ in range(30):
+        cc = _RNG.choice(["+1", "+44", "+34", "+49", "+00", "+53", "+5"])
         l = _RNG.choice(_LADAS_MX)
         invalidos.append(f"{cc} {l} {_rand_digit_str(4)} {_rand_digit_str(4)}")
 
     # 6. Paréntesis mal formados
-    for _ in range(20):
+    for _ in range(25):
         l = _RNG.choice(_LADAS_MX)
         variant = _RNG.choice([
             f"({l} {_rand_digit_str(8)}",      # sin cierre
@@ -346,14 +351,18 @@ def _generar_telefonos_invalidos() -> List[str]:
         invalidos.append(variant)
 
     # 7. Cadena vacía y espacios
-    invalidos.extend(["", " ", "   ", "----------", "()"])
+    invalidos.extend(["", " ", "   ", "----------", "()", "0000000000"])
 
     # 8. Sólo signos
-    for _ in range(15):
+    for _ in range(20):
         invalidos.append(_rand_str("+-() ", 3, 10))
 
-    # 9. Formato mixto incoherente
-    for _ in range(15):
+    # 9. LADA inválida que inicia en 0 o 1
+    for _ in range(25):
+        invalidos.append(_RNG.choice(["0", "1"]) + _rand_digit_str(9))
+
+    # 10. Formato mixto incoherente
+    for _ in range(20):
         invalidos.append(
             f"+52({_RNG.choice(_LADAS_MX)})-{_rand_digit_str(2)} "
             f"{_rand_digit_str(3)}-{_rand_digit_str(5)}"
@@ -373,6 +382,7 @@ _URL_ER_FORMAL = (
     " ( : (0+...+9)(0+...+9)* + ε )"
     " ( / (a+...+z+A+...+Z+0+...+9+-._~:@!$&'()*+,;=%/)* + ε )"
     " ( ? (a+...+z+A+...+Z+0+...+9+-._~:@!$&'()*+,;=%&=/)* + ε )"
+    " ( # (a+...+z+A+...+Z+0+...+9+-._~:@!$&'()*+,;=%/)* + ε )"
 )
 
 _URL_ER_PYTHON = (
@@ -383,6 +393,7 @@ _URL_ER_PYTHON = (
     r"(?::\d{1,5})?"                                  # puerto opcional
     r"(?:/[a-zA-Z0-9_.~:@!$&'()*+,;=/%\-]*)?"        # ruta opcional
     r"(?:\?[a-zA-Z0-9_.~:@!$&'()*+,;=/%?\-]*)?"      # query opcional
+    r"(?:#[a-zA-Z0-9_.~:@!$&'()*+,;=/%\-]*)?"        # fragmento opcional
 )
 
 _URL_TLDS = [
@@ -406,7 +417,7 @@ _URL_QUERIES = [
 
 
 def _generar_urls_validas() -> List[str]:
-    """Genera ≥ 200 URLs válidas."""
+    """Genera ≥ 260 URLs válidas."""
     validas: List[str] = []
 
     # Ejemplos fijos representativos
@@ -421,10 +432,11 @@ def _generar_urls_validas() -> List[str]:
         "https://www.ejemplo.museum",
         "http://data.gob.mx/datos",
         "https://app.dev:3000",
+        "https://example.com/path#fragment",
     ]
     validas.extend(fijos)
 
-    while len(validas) < 220:
+    while len(validas) < 265:
         scheme = _RNG.choice(["http", "https"])
         num_sub = _RNG.randint(0, 2)
         domain_parts = [_rand_alphanum_lower(2, 10) for _ in range(num_sub + 1)]
@@ -438,57 +450,61 @@ def _generar_urls_validas() -> List[str]:
         path = _RNG.choice(_URL_PATHS)
         query = _RNG.choice(_URL_QUERIES)
 
-        url = f"{scheme}://{domain}.{tld}{port}{path}{query}"
+        fragment = ""
+        if _RNG.random() < 0.2:
+            fragment = "#" + _rand_alphanum_lower(3, 8)
+
+        url = f"{scheme}://{domain}.{tld}{port}{path}{query}{fragment}"
         validas.append(url)
 
     return validas
 
 
 def _generar_urls_invalidas() -> List[str]:
-    """Genera ≥ 200 URLs inválidas."""
+    """Genera ≥ 260 URLs inválidas."""
     invalidas: List[str] = []
 
     # 1. Sin esquema
-    for _ in range(25):
+    for _ in range(30):
         invalidas.append(f"www.{_rand_alphanum_lower(3,8)}.com")
 
     # 2. Esquema incorrecto
-    for _ in range(25):
+    for _ in range(30):
         bad_scheme = _RNG.choice(["ftp", "htp", "htps", "httpss", "mailto", "file"])
         invalidas.append(f"{bad_scheme}://{_rand_alphanum_lower(3,8)}.com")
 
     # 3. Sin dominio
-    for _ in range(20):
+    for _ in range(25):
         invalidas.append(_RNG.choice(["http://", "https://"]))
 
     # 4. Sin TLD
-    for _ in range(25):
+    for _ in range(30):
         invalidas.append(f"http://{_rand_alphanum_lower(3,8)}")
 
     # 5. TLD inválido (1 carácter)
-    for _ in range(20):
+    for _ in range(25):
         invalidas.append(
             f"http://{_rand_alphanum_lower(3,8)}."
             f"{_RNG.choice(string.ascii_lowercase)}"
         )
 
     # 6. TLD demasiado largo (> 6)
-    for _ in range(20):
+    for _ in range(25):
         invalidas.append(
             f"http://{_rand_alphanum_lower(3,8)}."
             f"{_rand_alpha_lower(7, 12)}"
         )
 
     # 7. Doble barra en esquema mal formado
-    for _ in range(15):
+    for _ in range(25):
         invalidas.append(f"http:/{_rand_alphanum_lower(3,8)}.com")
 
     # 8. Espacios en URL
-    for _ in range(15):
+    for _ in range(25):
         invalidas.append(f"http://www. {_rand_alphanum_lower(3,8)} .com")
 
     # 9. Puerto inválido (no numérico)
-    for _ in range(15):
+    for _ in range(25):
         invalidas.append(
             f"http://{_rand_alphanum_lower(3,8)}.com:"
             f"{_rand_alpha_lower(2, 4)}"
@@ -502,7 +518,7 @@ def _generar_urls_invalidas() -> List[str]:
     ])
 
     # 11. Dominio empieza/termina con guión
-    for _ in range(15):
+    for _ in range(25):
         invalidas.append(f"http://-{_rand_alphanum_lower(3,8)}.com")
 
     return invalidas
@@ -514,7 +530,7 @@ def _generar_urls_invalidas() -> List[str]:
 
 def _crear_validador_email() -> Validador:
     return Validador(
-        nombre="Correo Electrónico",
+        nombre="Correo Electrónico (Email)",
         descripcion=(
             "Valida direcciones de correo electrónico con aproximación "
             "al estándar RFC 5322. Parte local: alfanuméricos, puntos, "
