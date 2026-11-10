@@ -124,3 +124,4 @@ class FormatosAutomata:
 2. Implementar `src/automata_a_er.py` (Eliminación de estados) (Kazuto834).
 3. Implementar `src/validadores.py` y suite de 500 pruebas contra `re.fullmatch` (Kazuto834).
 4. Documentar monografía de expresiones regulares y bombeo en `docs/practica4/01-investigacion-er.md`.
+

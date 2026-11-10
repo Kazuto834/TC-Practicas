@@ -93,3 +93,4 @@ Norma de citación: **APA Séptima Edición (APA 7)**
 16. **Instituto Federal de Telecomunicaciones (IFT). (2018).**  
     *Plan Técnico Fundamental de Numeración*. Diario Oficial de la Federación, México.  
     URL: [https://www.ift.org.mx/](https://www.ift.org.mx/)
+

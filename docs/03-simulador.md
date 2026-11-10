@@ -109,3 +109,4 @@ La suite de pruebas automatizadas con Pytest cubre:
 4. Aceptación en AFND-$\lambda$ gobernada por la $\lambda$-clausura (`test_afnd_lambda_clausura`).
 5. Traza completa con registro de transiciones tomadas (`test_traza_paso_a_paso`).
 6. Validación exhaustiva de las 10 cadenas del autómata aplicado de Pac-Man (`test_pacman.py`).
+

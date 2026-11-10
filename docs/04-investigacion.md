@@ -172,3 +172,4 @@ Michael O. Rabin y Dana S. Scott fueron galardonados conjuntamente con el **ACM 
 * **Resultado Principal:** Demostración y validación empírica de una cota temporal de simulación directa que reduce el coste por símbolo a $O(n / w + \log n)$ donde $w$ es el tamaño de palabra de la CPU (64 bits), evitando por completo la materialización del AFD exponencial.
 * **Relación con el Temario:** Relacionado directamente con el cálculo de la $\lambda$-clausura y con la decisión arquitectónica abordada en nuestro Ejercicio 3 sobre simulación de caminos concurrentes versus conversión de subconjuntos.
 * **Aportación a Nuestro Trabajo:** Proporcionó la justificación teórica y empírica para la implementación de nuestro motor `src/automata.py`, confirmando que el rastreo concurrente con $\lambda$-clausuras es el método óptimo para simuladores interactivos de propósito general.
+

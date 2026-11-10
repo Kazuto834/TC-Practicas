@@ -40,3 +40,4 @@ Norma de citación: **APA Séptima Edición (APA 7)**
 ## 5. Ejercicio 5 (Del Artículo al Autómata: Pac-Man Extendido)
 * **Gribkoff, E. (2013).** *Applications of deterministic finite automata* [Documento de curso, ECS 120]. University of California, Davis. [https://www.cs.ucdavis.edu/~rogaway/classes/120/spring13/eric-dfa.pdf](https://www.cs.ucdavis.edu/~rogaway/classes/120/spring13/eric-dfa.pdf)
 * **Iwatani, T. (2005).** *Pac-Man's 25th Anniversary: The design philosophy of ghost artificial intelligence*. Game Developers Conference (GDC).
+
