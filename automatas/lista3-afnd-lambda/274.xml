@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<automata tipo="AFND-lambda"><alfabeto><simbolo>a</simbolo><simbolo>b</simbolo></alfabeto><estados><estado nombre="q0" inicial="true" aceptacion="true" /><estado nombre="q1" /></estados><transiciones><transicion desde="q0" lee="a" hacia="q0" /><transicion desde="q1" lee="" hacia="q0" /><transicion desde="q0" lee="b" hacia="q1" /></transiciones></automata>
