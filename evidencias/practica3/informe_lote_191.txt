@@ -1,0 +1,22 @@
+============================================================
+  REPORTE CONSOLIDADO DE VALIDACIÓN MASIVA POR LOTES
+============================================================
+Archivo evaluado:        lote_cadenas_prueba.txt
+Total de cadenas:        10
+Cadenas ACEPTADAS:       5
+Cadenas RECHAZADAS:      5
+Tasa de aceptación:      50.00 %
+------------------------------------------------------------
+Línea | Cadena              | Longitud | Resultado
+------------------------------------------------------------
+    1 | λ (vacía)            |        0 | RECHAZADA
+    2 | '0'                  |        1 | RECHAZADA
+    3 | '1'                  |        1 | RECHAZADA
+    4 | '01'                 |        2 | ACEPTADA
+    5 | '001'                |        3 | ACEPTADA
+    6 | '101'                |        3 | ACEPTADA
+    7 | '0101'               |        4 | ACEPTADA
+    8 | '1111'               |        4 | RECHAZADA
+    9 | '000001'             |        6 | ACEPTADA
+   10 | '101010'             |        6 | RECHAZADA
+============================================================

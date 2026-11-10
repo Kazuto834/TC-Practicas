@@ -1,0 +1,9 @@
+MINIMIZACIÓN DE AFD POR REFINAMIENTO DE PARTICIONES (EJERCICIO 152)
+Inaccesibles Eliminados: []
+Partición Inicial P0: [['A', 'B', 'C'], ['D', 'E', 'F']]
+Ronda 0: Partición=[['A', 'B', 'C'], ['D', 'E', 'F']]
+Ronda 1: Partición=[['A'], ['B'], ['C'], ['D', 'E', 'F']]
+Ronda 2: Partición=[['A'], ['B'], ['C'], ['D', 'F'], ['E']]
+Ronda 3: Partición=[['A'], ['B'], ['C'], ['D', 'F'], ['E']]
+Partición Final: [['A'], ['B'], ['C'], ['D', 'F'], ['E']]
+Mapeo de Bloques: {'[A]': ['A'], '[B]': ['B'], '[C]': ['C'], '[D,F]': ['D', 'F'], '[E]': ['E']}

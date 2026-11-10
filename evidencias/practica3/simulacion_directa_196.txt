@@ -1,0 +1,5 @@
+SIMULACIÓN DIRECTA PASO A PASO AFN-LAMBDA (EJERCICIO 196)
+Cadena: 01
+Paso 0: Lee=None, Prev=['A'], Cl_Prev=['A', 'B'], Trans=[], Post=['A', 'B'], Cl_Post=['A', 'B'], Acept=False
+Paso 1: Lee=0, Prev=['A', 'B'], Cl_Prev=['A', 'B'], Trans=[{'desde': 'A', 'lee': '0', 'hacia': 'A'}, {'desde': 'B', 'lee': '0', 'hacia': 'A'}, {'desde': 'B', 'lee': '0', 'hacia': 'B'}], Post=['A', 'B'], Cl_Post=['A', 'B'], Acept=False
+Paso 2: Lee=1, Prev=['A', 'B'], Cl_Prev=['A', 'B'], Trans=[{'desde': 'B', 'lee': '1', 'hacia': 'C'}], Post=['C'], Cl_Post=['C'], Acept=True

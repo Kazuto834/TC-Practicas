@@ -1,0 +1,7 @@
+CONSTRUCCIÓN DE SUBCONJUNTOS ALCANZABLES (EJERCICIO 192)
+Paso 1: Subconjunto {A} | Aceptación=False (No contiene ningún estado de aceptación original.) | Transiciones={'0': '{B}', '1': '{B,C}'}
+Paso 2: Subconjunto {B} | Aceptación=False (No contiene ningún estado de aceptación original.) | Transiciones={'0': '{A,B}', '1': '∅'}
+Paso 3: Subconjunto {B,C} | Aceptación=True (Contiene estado(s) final(es) de aceptación: ['C']) | Transiciones={'0': '{A,B,C}', '1': '∅'}
+Paso 4: Subconjunto {A,B} | Aceptación=False (No contiene ningún estado de aceptación original.) | Transiciones={'0': '{A,B}', '1': '{B,C}'}
+Paso 5: Subconjunto ∅ | Aceptación=False (No contiene ningún estado de aceptación original.) | Transiciones={'0': '∅', '1': '∅'}
+Paso 6: Subconjunto {A,B,C} | Aceptación=True (Contiene estado(s) final(es) de aceptación: ['C']) | Transiciones={'0': '{A,B,C}', '1': '{B,C}'}

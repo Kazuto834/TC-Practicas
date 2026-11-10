@@ -1,0 +1,23 @@
+ELIMINACIÓN DE TRANSICIONES LAMBDA PASO A PASO (EJERCICIO 199)
+Clausuras Lambda: {'A': ['A', 'B', 'C', 'E'], 'B': ['B'], 'C': ['C', 'E'], 'D': ['D'], 'E': ['E']}
+Nuevos Estados de Aceptación: ['A', 'C', 'D', 'E']
+  A: La λ-clausura ['A', 'B', 'C', 'E'] contiene estado(s) final(es): ['E']
+  E: La λ-clausura ['E'] contiene estado(s) final(es): ['E']
+  C: La λ-clausura ['C', 'E'] contiene estado(s) final(es): ['E']
+  D: La λ-clausura ['D'] contiene estado(s) final(es): ['D']
+Total de transiciones agregadas: 15
+  delta'(A, 0) = E | Directos=['E'], Clausurados=['E']
+  delta'(A, 1) = A | Directos=['A', 'B', 'C', 'D'], Clausurados=['A', 'B', 'C', 'D', 'E']
+  delta'(A, 1) = B | Directos=['A', 'B', 'C', 'D'], Clausurados=['A', 'B', 'C', 'D', 'E']
+  delta'(A, 1) = C | Directos=['A', 'B', 'C', 'D'], Clausurados=['A', 'B', 'C', 'D', 'E']
+  delta'(A, 1) = D | Directos=['A', 'B', 'C', 'D'], Clausurados=['A', 'B', 'C', 'D', 'E']
+  delta'(A, 1) = E | Directos=['A', 'B', 'C', 'D'], Clausurados=['A', 'B', 'C', 'D', 'E']
+  delta'(B, 0) = E | Directos=['E'], Clausurados=['E']
+  delta'(B, 1) = B | Directos=['B'], Clausurados=['B']
+  delta'(C, 1) = A | Directos=['A', 'C', 'D'], Clausurados=['A', 'B', 'C', 'D', 'E']
+  delta'(C, 1) = B | Directos=['A', 'C', 'D'], Clausurados=['A', 'B', 'C', 'D', 'E']
+  delta'(C, 1) = C | Directos=['A', 'C', 'D'], Clausurados=['A', 'B', 'C', 'D', 'E']
+  delta'(C, 1) = D | Directos=['A', 'C', 'D'], Clausurados=['A', 'B', 'C', 'D', 'E']
+  delta'(C, 1) = E | Directos=['A', 'C', 'D'], Clausurados=['A', 'B', 'C', 'D', 'E']
+  delta'(D, 1) = D | Directos=['D'], Clausurados=['D']
+  delta'(E, 1) = D | Directos=['D'], Clausurados=['D']
