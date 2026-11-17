@@ -1,11 +1,31 @@
 """
-Módulo de Interfaz Gráfica para el Simulador de Autómatas Finitos (Flet).
+===============================================================================
+MÓDULO DE INTERFAZ GRÁFICA PARA EL SIMULADOR DE AUTÓMATAS FINITOS (FLET)
+===============================================================================
+Unidad de Aprendizaje: Teoría de la Computación
+Institución: Escuela Superior de Cómputo (ESCOM - IPN)
+Autores: Antonio Navarro Domínguez & Mario García Castillo
 
-Proyecto: Prácticas de Teoría de la Computación (ESCOM-IPN)
-Autor: Mario García Castillo (Kazuto834) <luilligar834@gmail.com>
-Responsabilidad: Vista y controladores para definición interactiva,
-                importación/exportación multiformato (.jff, .json, .xml),
-                simulación paso a paso con traza y visualización de la quíntupla.
+Descripción:
+    Implementa la vista gráfica interactiva para el simulador de autómatas finitos
+    en Flet (conforme al Ejercicio 3 de la especificación de Práctica 2):
+      - Definición interactiva de estados, alfabeto, estado inicial y aceptación (3.1).
+      - Visualización y actualización dinámica de la tabla de transiciones (3.1).
+      - Importación multiformato desde .jff (JFLAP), .json y .xml (3.2).
+      - Simulación paso a paso con traza de bifurcaciones y lambda-clausuras (3.3).
+      - Exportación multiformato a .jff, .json y .xml (3.4).
+      
+    Mantiene el desacoplamiento total: la lógica formal reside en automata.py
+    y formatos.py, sin dependencia de la biblioteca gráfica.
+
+Navegación del Módulo:
+    1. Función Principal: crear_vista_simulador
+    2. Componentes de Quíntupla y Estado Formal
+    3. Paneles de Definición Interactiva (Estados y Transiciones)
+    4. Controladores de Importación y Exportación (.jff, .json, .xml)
+    5. Motor Visual de Simulación Paso a Paso y Traza
+    6. Punto de Entrada Independiente: main_standalone
+===============================================================================
 """
 
 from __future__ import annotations
@@ -15,18 +35,28 @@ from automata import Automata
 from formatos import FormatosAutomata
 
 
+# =============================================================================
+# SECCIÓN 1: VISTA PRINCIPAL DEL SIMULADOR
+# =============================================================================
+
 def crear_vista_simulador(page: ft.Page) -> ft.Control:
     """
     Construye y retorna el componente visual completo del simulador de autómatas.
-    Totalmente desacoplado de la lógica del núcleo matemático.
+    Totalmente desacoplado de la lógica matemática del núcleo formal.
+    
+    Parámetros:
+        page (ft.Page): Instancia de página activa en Flet.
+        
+    Retorna:
+        ft.Control: Control contenedor que encapsula la interfaz del simulador.
     """
-    # Estado interno del autómata en la interfaz
+    # Estado interno del autómata en la interfaz gráfica
     automata_actual: Automata = Automata()
     traza_actual: list = []
     indice_paso_actual: int = 0
 
     # -------------------------------------------------------------------------
-    # Componentes Visuales: Panel de Información y Quíntupla
+    # 1.1 Encabezado y Resumen de la Quíntupla Formal M = (Q, Sigma, delta, q0, F)
     # -------------------------------------------------------------------------
     txt_titulo = ft.Text(
         "Simulador Interactivo de Autómatas Finitos (AFD / AFND / AFND-λ)",
@@ -44,8 +74,9 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
 
     txt_tipo_auto = ft.Text("Tipo: Ninguno", weight=ft.FontWeight.W_500)
 
+
     # -------------------------------------------------------------------------
-    # Componentes Visuales: Definición Interactiva
+    # 1.2 Campos de Entrada para Definición Interactiva (Ejercicio 3.1)
     # -------------------------------------------------------------------------
     tf_estados = ft.TextField(
         label="Estados Q (ej. q0, q1, q2)",
@@ -71,7 +102,7 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
         expand=True
     )
 
-    # Definición de transiciones
+    # Entradas para adición individual de transiciones
     tf_trans_origen = ft.TextField(label="Origen", dense=True, width=100)
     tf_trans_simbolo = ft.TextField(
         label="Símbolo (vacío = λ)",
@@ -80,11 +111,12 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
     )
     tf_trans_destino = ft.TextField(label="Destino", dense=True, width=100)
 
-    # Contenedor para la tabla de transiciones
+    # Contenedor dinámico de la tabla interactiva de transiciones
     tabla_transiciones_col = ft.Column(scroll=ft.ScrollMode.AUTO)
 
+
     # -------------------------------------------------------------------------
-    # Componentes Visuales: Simulación y Traza
+    # 1.3 Componentes para Simulación y Traza Paso a Paso (Ejercicio 3.3)
     # -------------------------------------------------------------------------
     tf_cadena_simular = ft.TextField(
         label="Cadena de entrada w",
@@ -112,18 +144,34 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
     )
     txt_contador_pasos = ft.Text(value="Paso: - / -", size=12)
 
-    # -------------------------------------------------------------------------
-    # Actualización de la Interfaz
-    # -------------------------------------------------------------------------
-    def actualizar_resumen_quintupla():
+
+    # =========================================================================
+    # SECCIÓN 2: CONTROLADORES DE ACTUALIZACIÓN Y SINCRONIZACIÓN
+    # =========================================================================
+
+    def mostrar_snack(mensaje: str, color: str = ft.Colors.BLUE_400) -> None:
+        """Muestra una notificación emergente informativa en pantalla."""
+        snack = ft.SnackBar(ft.Text(mensaje), bgcolor=color)
+        if hasattr(page, "open"):
+            page.open(snack)
+        else:
+            page.snack_bar = snack
+            page.snack_bar.open = True
+        page.update()
+
+    def actualizar_resumen_quintupla() -> None:
+        """Sincroniza la visualización de la quíntupla formal y la tabla de delta."""
         nonlocal automata_actual
         q_str = "{" + ", ".join(sorted(list(automata_actual.estados))) + "}"
         sig_str = "{" + ", ".join(sorted(list(automata_actual.alfabeto))) + "}"
         q0_str = str(automata_actual.estado_inicial or "∅")
         f_str = "{" + ", ".join(sorted(list(automata_actual.estados_aceptacion))) + "}"
-        
+
         automata_actual._actualizar_tipo()
-        txt_tipo_auto.value = f"Tipo Detectado: {automata_actual.tipo} ({len(automata_actual.transiciones)} transiciones)"
+        txt_tipo_auto.value = (
+            f"Tipo Detectado: {automata_actual.tipo} "
+            f"({len(automata_actual.transiciones)} transiciones)"
+        )
         txt_quintupla.value = (
             f"Q  = {q_str}\n"
             f"Σ  = {sig_str}\n"
@@ -131,7 +179,7 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
             f"F  = {f_str}"
         )
 
-        # Actualizar tabla visual de transiciones
+        # Generar filas de la tabla de transiciones
         filas = []
         tabla_dict = automata_actual.obtener_tabla_transiciones()
         for orig in sorted(list(automata_actual.estados)):
@@ -161,10 +209,11 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
         ]
         page.update()
 
-    def aplicar_definicion_manual(e):
+    def aplicar_definicion_manual(e) -> None:
+        """Aplica y valida los datos de estados y alfabeto ingresados interactivamente."""
         nonlocal automata_actual
         auto = Automata()
-        
+
         estados = [x.strip() for x in tf_estados.value.split(",") if x.strip()]
         alfabeto = [x.strip() for x in tf_alfabeto.value.split(",") if x.strip()]
         inicial = tf_inicial.value.strip() or None
@@ -179,7 +228,8 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
         actualizar_resumen_quintupla()
         mostrar_snack("Quíntupla base actualizada. Ya puede agregar transiciones.")
 
-    def agregar_transicion_click(e):
+    def agregar_transicion_click(e) -> None:
+        """Registra una nueva transición delta(origen, símbolo) -> destino."""
         nonlocal automata_actual
         orig = tf_trans_origen.value.strip()
         simb = tf_trans_simbolo.value.strip()
@@ -194,10 +244,13 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
         actualizar_resumen_quintupla()
         mostrar_snack(f"Transición δ({orig}, '{simb or 'λ'}') → {dest} agregada.")
 
-    # -------------------------------------------------------------------------
-    # Controladores de Simulación Paso a Paso
-    # -------------------------------------------------------------------------
-    def ejecutar_simulacion_completa(e):
+
+    # =========================================================================
+    # SECCIÓN 3: CONTROLADORES DE SIMULACIÓN Y TRAZA PASO A PASO
+    # =========================================================================
+
+    def ejecutar_simulacion_completa(e) -> None:
+        """Ejecuta la simulación completa de la cadena de entrada y prepara la traza."""
         nonlocal automata_actual, traza_actual, indice_paso_actual
         cadena = tf_cadena_simular.value or ""
         aceptada, traza = automata_actual.simular_cadena(cadena)
@@ -211,7 +264,8 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
 
         mostrar_paso_actual()
 
-    def mostrar_paso_actual():
+    def mostrar_paso_actual() -> None:
+        """Renderiza los detalles del paso actual en la traza paso a paso."""
         nonlocal traza_actual, indice_paso_actual
         if not traza_actual:
             txt_traza_detallada.value = "Sin traza de ejecución disponible."
@@ -245,13 +299,13 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
         txt_traza_detallada.value = "\n".join(lineas)
         page.update()
 
-    def paso_anterior_click(e):
+    def paso_anterior_click(e) -> None:
         nonlocal indice_paso_actual
         if indice_paso_actual > 0:
             indice_paso_actual -= 1
             mostrar_paso_actual()
 
-    def paso_siguiente_click(e):
+    def paso_siguiente_click(e) -> None:
         nonlocal indice_paso_actual, traza_actual
         if indice_paso_actual < len(traza_actual) - 1:
             indice_paso_actual += 1
@@ -260,19 +314,13 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
     btn_paso_anterior.on_click = paso_anterior_click
     btn_paso_siguiente.on_click = paso_siguiente_click
 
-    def mostrar_snack(mensaje: str, color: str = ft.Colors.BLUE_400):
-        snack = ft.SnackBar(ft.Text(mensaje), bgcolor=color)
-        if hasattr(page, "open"):
-            page.open(snack)
-        else:
-            page.snack_bar = snack
-            page.snack_bar.open = True
-        page.update()
 
-    # -------------------------------------------------------------------------
-    # Integración con FilePicker (Importar / Exportar)
-    # -------------------------------------------------------------------------
-    def on_archivo_seleccionado(e: ft.FilePickerResultEvent):
+    # =========================================================================
+    # SECCIÓN 4: CONTROLADORES DE IMPORTACIÓN Y EXPORTACIÓN (.JFF, .JSON, .XML)
+    # =========================================================================
+
+    def on_archivo_seleccionado(e: ft.FilePickerResultEvent) -> None:
+        """Carga y parsea un archivo de autómata seleccionado por el usuario."""
         nonlocal automata_actual
         if not e.files:
             return
@@ -289,7 +337,7 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
                 mostrar_snack(f"Extensión no soportada: {ext}", color=ft.Colors.RED_400)
                 return
 
-            # Sincronizar inputs
+            # Sincronizar campos de entrada con el modelo importado
             tf_estados.value = ", ".join(sorted(list(automata_actual.estados)))
             tf_alfabeto.value = ", ".join(sorted(list(automata_actual.alfabeto)))
             tf_inicial.value = automata_actual.estado_inicial or ""
@@ -304,8 +352,8 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
     file_picker_importar.on_result = on_archivo_seleccionado
     page.services.append(file_picker_importar)
 
-    # Exportación rápida a directorio local
-    def exportar_automata(formato: str):
+    def exportar_automata(formato: str) -> None:
+        """Serializa y guarda el autómata actual en el formato especificado."""
         nonlocal automata_actual
         if not automata_actual.estados:
             mostrar_snack("No hay autómata definido para exportar.", color=ft.Colors.RED_400)
@@ -323,9 +371,11 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
         except Exception as ex:
             mostrar_snack(f"Error al exportar: {ex}", color=ft.Colors.RED_400)
 
-    # -------------------------------------------------------------------------
-    # Layout y Ensamblado de Controles
-    # -------------------------------------------------------------------------
+
+    # =========================================================================
+    # SECCIÓN 5: ENSAMBLADO DE PANELES Y LAYOUT GENERAL
+    # =========================================================================
+
     panel_definicion = ft.ExpansionTile(
         title=ft.Text("1. Definición Interactiva del Autómata", weight=ft.FontWeight.BOLD),
         expanded=False,
@@ -335,7 +385,12 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
             ft.ElevatedButton("Actualizar Quíntupla", on_click=aplicar_definicion_manual),
             ft.Divider(),
             ft.Text("Agregar Transición Individual:", weight=ft.FontWeight.W_500),
-            ft.Row([tf_trans_origen, tf_trans_simbolo, tf_trans_destino, ft.ElevatedButton("Agregar", on_click=agregar_transicion_click)])
+            ft.Row([
+                tf_trans_origen,
+                tf_trans_simbolo,
+                tf_trans_destino,
+                ft.ElevatedButton("Agregar", on_click=agregar_transicion_click)
+            ])
         ]
     )
 
@@ -402,8 +457,13 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
     return vista_principal
 
 
-def main_standalone(page: ft.Page):
-    page.title = "Simulador de Autómatas Finitos"
+# =============================================================================
+# SECCIÓN 6: PUNTO DE ENTRADA STANDALONE
+# =============================================================================
+
+def main_standalone(page: ft.Page) -> None:
+    """Ejecuta el simulador de autómatas de manera independiente."""
+    page.title = "Simulador de Autómatas Finitos (P2)"
     page.window.width = 650
     page.window.height = 750
     page.padding = 20
@@ -412,4 +472,3 @@ def main_standalone(page: ft.Page):
 
 if __name__ == "__main__":
     ft.run(main_standalone)
-
