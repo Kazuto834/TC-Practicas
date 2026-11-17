@@ -1,7 +1,7 @@
 # Práctica 1: "Operaciones Básicas sobre Lenguajes"
 ## Datos del Equipo
 * **Carrera:** Ingeniería en Sistemas Computacionales
-* **Unidad de Aprendizaje:** Base de Datos
+* **Unidad de Aprendizaje:** Teoría de la computación
 * **Grupo:** 4CM4
 * **Integrantes:**
   * Garcia Castillo Mario, 2025630545
