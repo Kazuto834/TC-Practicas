@@ -1,13 +1,3 @@
-"""
-Módulo de Integración de Aplicaciones (Práctica 1 y Práctica 2).
-
-Proyecto: Prácticas de Teoría de la Computación (ESCOM-IPN)
-Autores: Antonio Navarro Domínguez (A7LAS-1) & Mario García Castillo (Kazuto834)
-Responsabilidad: Adaptador e integración no destructiva entre la calculadora de
-                cadenas/lenguajes (Práctica 1) y el simulador de autómatas finitos (Práctica 2).
-"""
-
-from __future__ import annotations
 import flet as ft
 from lenguajes import (
     prefijos,
@@ -16,14 +6,15 @@ from lenguajes import (
     cerradura_Kleene,
     cerradura_positiva
 )
-from gui_simulador import crear_vista_simulador
 
 
-def crear_vista_practica1(page: ft.Page) -> ft.Control:
-    """
-    Construye la vista de la Práctica 1 preservando exactamente los mismos
-    controles, validaciones y lógica del módulo app.py original sin alteración.
-    """
+def main(page: ft.Page):
+    page.title = "Calculadora de Teoría de Lenguajes"
+    page.window.width = 550
+    page.window.height = 700
+    page.padding = 20
+    page.scroll = ft.ScrollMode.ADAPTIVE
+
     def guardar_archivo(e):
         if e.path:
             try:
@@ -57,8 +48,8 @@ def crear_vista_practica1(page: ft.Page) -> ft.Control:
             mostrar_error(f"Error al abrir el selector de archivos: {ex}")
 
     titulo = ft.Text(
-        "Operaciones con Cadenas y Alfabetos (Práctica 1)",
-        size=20,
+        "Operaciones con Cadenas y Alfabetos",
+        size=22,
         weight=ft.FontWeight.BOLD
     )
 
@@ -229,52 +220,16 @@ def crear_vista_practica1(page: ft.Page) -> ft.Control:
         border=ft.Border.all(1, ft.Colors.GREY_400)
     )
 
-    vista_p1 = ft.Column([
+    page.add(
         titulo,
         opciones_dropdown,
         input_texto,
         input_longitud,
         fila_botones,
         contenedor_resultado
-    ], scroll=ft.ScrollMode.ADAPTIVE, expand=True)
-
-    return vista_p1
-
-
-def main_integrada(page: ft.Page):
-    """Punto de entrada integrado que conmuta entre Práctica 1 y Práctica 2."""
-    page.title = "Teoría de la Computación — Suite Integrada de Prácticas"
-    page.window.width = 700
-    page.window.height = 800
-    page.padding = 15
-
-    vista_p1 = crear_vista_practica1(page)
-    vista_p2 = crear_vista_simulador(page)
-
-    contenedor_dinamico = ft.Container(content=vista_p2, expand=True)
-
-    def cambiar_modulo(e):
-        seleccion = e.control.selected_index
-        if seleccion == 0:
-            contenedor_dinamico.content = vista_p2
-        else:
-            contenedor_dinamico.content = vista_p1
-        page.update()
-
-    nav_bar = ft.NavigationBar(
-        destinations=[
-            ft.NavigationBarDestination(icon=ft.Icons.PLAY_CIRCLE_OUTLINE, label="Simulador Autómatas (P2)"),
-            ft.NavigationBarDestination(icon=ft.Icons.CALCULATE_OUTLINED, label="Operaciones Cadenas (P1)"),
-        ],
-        selected_index=0,
-        on_change=cambiar_modulo
     )
 
-    page.navigation_bar = nav_bar
-    page.add(contenedor_dinamico)
     page.update()
 
 
-if __name__ == "__main__":
-    ft.run(main_integrada)
-
+ft.run(main)

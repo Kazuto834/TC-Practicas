@@ -1,14 +1,4 @@
 services:
-  py311:
-    build:
-      context: ..
-      dockerfile: entorno/Dockerfile
-      args:
-        PYTHON_VERSION: "3.11"
-    container_name: tc_p1_py311
-    volumes:
-      - ..:/app
-    command: pytest -q
   py312:
     build:
       context: ..
@@ -20,13 +10,3 @@ services:
       - "8550:8550" # equipo : contenedor
     volumes:
       - ..:/app
-  py313:
-    build:
-      context: ..
-      dockerfile: entorno/Dockerfile
-      args:
-        PYTHON_VERSION: "3.13"
-    container_name: tc_p1_py313
-    volumes:
-      - ..:/app
-    command: pytest -q
