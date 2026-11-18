@@ -74,23 +74,38 @@ Norma de citación: **APA Séptima Edición (APA 7)**
     **DOI:** [https://doi.org/10.1016/j.tcs.2019.09.006](https://doi.org/10.1016/j.tcs.2019.09.006)  
     *Aportación:* Implementación y análisis formal de algoritmos de simulación en línea para concordancia de expresiones regulares basados en AFN con estructuras compactadas de memoria y paralelismo a nivel de bits.
 
+13. **Thompson, K. (1968).**  
+    Regular expression search algorithm. *Communications of the ACM*, 11(6), 419–422.  
+    **DOI:** [https://doi.org/10.1145/363347.363387](https://doi.org/10.1145/363347.363387)  
+    *Aportación:* Algoritmo seminal de construcción de AFN con transiciones lambda a partir de expresiones regulares (construcción de Thompson) y simulación directa paso a paso mediante conjuntos de estados activos en tiempo $O(n \cdot |w|)$.
+
+14. **Ilie, L., & Yu, S. (2003).**  
+    Reducing NFAs by extensible automata. *Theoretical Computer Science*, 310(1–3), 235–256.  
+    **DOI:** [https://doi.org/10.1016/S0304-3975(02)00843-7](https://doi.org/10.1016/S0304-3975(02)00843-7)  
+    *Aportación:* Demostración y algoritmos constructivos para la eliminación de transiciones vacías ($\lambda$) y reducción de redundancias estructurales en autómatas finitos no deterministas preservando estrictamente el lenguaje formal.
+
+15. **Valmari, A. (2012).**  
+    Fast miniature DFA minimization. *Information Processing Letters*, 112(6), 228–231.  
+    **DOI:** [https://doi.org/10.1016/j.ipl.2011.12.004](https://doi.org/10.1016/j.ipl.2011.12.004)  
+    *Aportación:* Algoritmo refinado y linealizado para la partición de estados y minimización de autómatas deterministas, contrastando con el enfoque clásico de Hopcroft y Moore.
+
 ---
 
 ## 4. Documentación Oficial y Especificaciones Técnicas
 
-13. **Rodger, S. H., & Finley, T. W. (2006).**  
+16. **Rodger, S. H., & Finley, T. W. (2006).**  
     *JFLAP: An Interactive Formal Languages and Automata Package*. Jones & Bartlett Publishers. Versión de software consultada: **JFLAP 7.1 (2023)**.  
     URL: [https://www.jflap.org/](https://www.jflap.org/)
 
-14. **Internet Engineering Task Force (IETF). (1994).**  
+17. **Internet Engineering Task Force (IETF). (1994).**  
     *PPP in HDLC-like Framing* (RFC 1662). Editado por W. Simpson.  
     **DOI:** [https://doi.org/10.17487/RFC1662](https://doi.org/10.17487/RFC1662)
 
-15. **Berners-Lee, T., Fielding, R., & Masinter, L. (2005).**  
+18. **Berners-Lee, T., Fielding, R., & Masinter, L. (2005).**  
     *Uniform Resource Identifier (URI): Generic Syntax* (RFC 3986). Internet Standard.  
     **DOI:** [https://doi.org/10.17487/RFC3986](https://doi.org/10.17487/RFC3986)
 
-16. **Instituto Federal de Telecomunicaciones (IFT). (2018).**  
+19. **Instituto Federal de Telecomunicaciones (IFT). (2018).**  
     *Plan Técnico Fundamental de Numeración*. Diario Oficial de la Federación, México.  
     URL: [https://www.ift.org.mx/](https://www.ift.org.mx/)
 
