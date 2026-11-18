@@ -72,7 +72,7 @@ def crear_vista_practica1(page: ft.Page) -> ft.Control:
         read_only=True,
         dense=True,
         border_radius=8,
-        font_family="monospace"
+        text_style=ft.TextStyle(font_family="monospace")
     )
 
     def cerrar_dialogo_exportar(e=None) -> None:
@@ -191,7 +191,7 @@ def crear_vista_practica1(page: ft.Page) -> ft.Control:
     texto_resultado = ft.Text(
         value="Seleccione una operación e ingrese los datos para ver el resultado...",
         selectable=True,
-        font_family="monospace",
+        style=ft.TextStyle(font_family="monospace"),
         size=12
     )
 

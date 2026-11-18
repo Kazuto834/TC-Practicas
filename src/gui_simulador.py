@@ -79,7 +79,7 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
 
     badge_tipo = ft.Container(
         content=ft.Text("TIPO: NINGUNO", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
-        padding=ft.padding.symmetric(horizontal=12, vertical=6),
+        padding=ft.Padding.symmetric(horizontal=12, vertical=6),
         border_radius=16,
         bgcolor=ft.Colors.GREY_600
     )
@@ -210,7 +210,7 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
     txt_traza_detallada = ft.Text(
         value="La traza detallada paso a paso se mostrará aquí una vez iniciada la simulación.",
         size=12,
-        font_family="monospace",
+        style=ft.TextStyle(font_family="monospace"),
         selectable=True
     )
 
@@ -609,7 +609,7 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
         max_lines=15,
         dense=True,
         border_radius=8,
-        font_family="monospace"
+        text_style=ft.TextStyle(font_family="monospace")
     )
 
     def cerrar_dialogo_pegar(e=None) -> None:
@@ -667,7 +667,7 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
         read_only=True,
         dense=True,
         border_radius=8,
-        font_family="monospace"
+        text_style=ft.TextStyle(font_family="monospace")
     )
 
     def cerrar_dialogo_exportar(e=None) -> None:
@@ -820,7 +820,7 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
     card_toolbar = ft.Card(
         elevation=1,
         content=ft.Container(
-            padding=ft.padding.symmetric(horizontal=12, vertical=8),
+            padding=ft.Padding.symmetric(horizontal=12, vertical=8),
             content=ft.Row([
                 btn_subir_archivo,
                 btn_pegar_codigo,
@@ -844,7 +844,7 @@ def crear_vista_simulador(page: ft.Page) -> ft.Control:
             ft.Icon(ft.Icons.EDIT_NOTE, color=ft.Colors.PRIMARY),
             ft.Text("1. Definición Interactiva de la Quíntupla", weight=ft.FontWeight.BOLD, size=14)
         ]),
-        initially_expanded=False,
+        expanded=False,
         controls=[
             ft.Container(
                 padding=14,
