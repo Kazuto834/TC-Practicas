@@ -119,15 +119,8 @@ class FormatosAutomata:
         return auto
 
     @staticmethod
-    def guardar_jff(automata: Automata, ruta_salida: str) -> None:
-        """
-        Exporta el autómata a un archivo .jff con la especificación nativa de JFLAP 7.1.
-        Genera una distribución circular de estados si no cuentan con posiciones explícitas.
-        
-        Parámetros:
-            automata (Automata): Autómata a serializar.
-            ruta_salida (str): Ruta destino del archivo .jff generado.
-        """
+    def a_jff_str(automata: Automata) -> str:
+        """Serializa el autómata a una cadena XML nativa de JFLAP 7.1 (.jff)."""
         root = ET.Element("structure")
         type_elem = ET.SubElement(root, "type")
         type_elem.text = "fa"
@@ -169,10 +162,23 @@ class FormatosAutomata:
                 read_elem.text = trans.simbolo
             # Transición lambda se expresa como <read/> vacío
 
-        xml_str = ET.tostring(root, encoding="utf-8")
-        header = b'<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
-        with open(ruta_salida, "wb") as f:
-            f.write(header + xml_str)
+        xml_str = ET.tostring(root, encoding="utf-8").decode("utf-8")
+        header = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
+        return header + xml_str
+
+    @staticmethod
+    def guardar_jff(automata: Automata, ruta_salida: str) -> None:
+        """
+        Exporta el autómata a un archivo .jff con la especificación nativa de JFLAP 7.1.
+        Genera una distribución circular de estados si no cuentan con posiciones explícitas.
+        
+        Parámetros:
+            automata (Automata): Autómata a serializar.
+            ruta_salida (str): Ruta destino del archivo .jff generado.
+        """
+        contenido = FormatosAutomata.a_jff_str(automata)
+        with open(ruta_salida, "w", encoding="utf-8") as f:
+            f.write(contenido)
 
 
     # =========================================================================
@@ -219,15 +225,8 @@ class FormatosAutomata:
         return auto
 
     @staticmethod
-    def guardar_json(automata: Automata, ruta_salida: str) -> None:
-        """
-        Exporta el autómata a formato .json estructurado conforme a la especificación oficial.
-        Agrupa destinos de transiciones que comparten estado de origen y símbolo leído.
-        
-        Parámetros:
-            automata (Automata): Autómata a exportar.
-            ruta_salida (str): Ruta destino del archivo .json.
-        """
+    def a_json_str(automata: Automata) -> str:
+        """Serializa el autómata a una cadena JSON estructurada con sangría."""
         agrupadas: Dict[Tuple[str, str], List[str]] = {}
         for t in automata.transiciones:
             clave = (t.origen, t.simbolo)
@@ -252,9 +251,21 @@ class FormatosAutomata:
             "aceptacion": sorted(list(automata.estados_aceptacion)),
             "transiciones": transiciones_json
         }
+        return json.dumps(data, indent=2, ensure_ascii=False)
 
+    @staticmethod
+    def guardar_json(automata: Automata, ruta_salida: str) -> None:
+        """
+        Exporta el autómata a formato .json estructurado conforme a la especificación oficial.
+        Agrupa destinos de transiciones que comparten estado de origen y símbolo leído.
+        
+        Parámetros:
+            automata (Automata): Autómata a exportar.
+            ruta_salida (str): Ruta destino del archivo .json.
+        """
+        contenido = FormatosAutomata.a_json_str(automata)
         with open(ruta_salida, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+            f.write(contenido)
 
 
     # =========================================================================
@@ -309,14 +320,8 @@ class FormatosAutomata:
         return auto
 
     @staticmethod
-    def guardar_xml(automata: Automata, ruta_salida: str) -> None:
-        """
-        Exporta el autómata a formato .xml canónico según la especificación del Anexo 3.
-        
-        Parámetros:
-            automata (Automata): Autómata a serializar.
-            ruta_salida (str): Ruta del archivo .xml de salida.
-        """
+    def a_xml_str(automata: Automata) -> str:
+        """Serializa el autómata a una cadena XML canónica según el Anexo 3."""
         root = ET.Element("automata", tipo=automata.tipo)
 
         # Alfabeto
@@ -346,7 +351,19 @@ class FormatosAutomata:
                 hacia=t.destino
             )
 
-        xml_str = ET.tostring(root, encoding="utf-8")
-        header = b'<?xml version="1.0" encoding="UTF-8"?>\n'
-        with open(ruta_salida, "wb") as f:
-            f.write(header + xml_str)
+        xml_str = ET.tostring(root, encoding="utf-8").decode("utf-8")
+        header = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        return header + xml_str
+
+    @staticmethod
+    def guardar_xml(automata: Automata, ruta_salida: str) -> None:
+        """
+        Exporta el autómata a formato .xml canónico según la especificación del Anexo 3.
+        
+        Parámetros:
+            automata (Automata): Autómata a serializar.
+            ruta_salida (str): Ruta del archivo .xml de salida.
+        """
+        contenido = FormatosAutomata.a_xml_str(automata)
+        with open(ruta_salida, "w", encoding="utf-8") as f:
+            f.write(contenido)

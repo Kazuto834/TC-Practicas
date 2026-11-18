@@ -30,4 +30,7 @@ desktop.ini
 *~
 *.pdf
 CONTEXTO/
+uploads/*
+!uploads/.gitkeep
+
 
