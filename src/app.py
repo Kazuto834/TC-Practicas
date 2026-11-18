@@ -1,8 +1,8 @@
 """
 Módulo Principal de Integración — Suite de Teoría de la Computación (Prácticas 1, 2 y 3).
 Optimizado para entorno Docker con flet[web]==0.86.5.
-Incluye renderizado gráfico vectorial de autómatas (Canvas), tabla de transiciones (DataTable)
-y carga limpia de archivos .jff / .json / .xml sin mostrar código XML crudo.
+Incluye renderizado gráfico vectorial de autómatas (Canvas), tabla de transiciones (DataTable),
+carga limpia de archivos y exportación a .JFF del autómata resultante.
 
 Proyecto: Prácticas de Teoría de la Computación (ESCOM-IPN)
 Autores: Antonio Navarro Domínguez (A7LAS-1) & Mario García Castillo (Kazuto834)
@@ -172,10 +172,7 @@ def construir_grafo_automata_canvas(
         if orig == dest:
             vx, vy = x1 - cx, y1 - cy
             norm = math.hypot(vx, vy)
-            if norm < 1e-3:
-                ux, uy = 0.0, -1.0
-            else:
-                ux, uy = vx / norm, vy / norm
+            ux, uy = (0.0, -1.0) if norm < 1e-3 else (vx / norm, vy / norm)
 
             ang_centro = math.atan2(uy, ux)
             a_ini = ang_centro - 0.45
@@ -277,10 +274,7 @@ def construir_grafo_automata_canvas(
         ix, iy = posiciones[auto.estado_inicial]
         vx, vy = ix - cx, iy - cy
         norm = math.hypot(vx, vy)
-        if norm < 1e-3:
-            ux, uy = -1.0, 0.0
-        else:
-            ux, uy = vx / norm, vy / norm
+        ux, uy = (-1.0, 0.0) if norm < 1e-3 else (vx / norm, vy / norm)
 
         punta_x = ix + radio_nodo * ux
         punta_y = iy + radio_nodo * uy
@@ -871,7 +865,7 @@ def crear_vista_practica1(page: ft.Page) -> ft.Control:
 
 
 # =====================================================================
-# VISTA PRÁCTICA 3: VISUALIZACIÓN GRÁFICA + TABLA + CARGA LIMPIA DE ARCHIVOS
+# VISTA PRÁCTICA 3: VISUALIZACIÓN GRÁFICA + TABLA + EXPORTACIÓN .JFF
 # =====================================================================
 
 EJEMPLO_AFN_LAMBDA = """# Ejemplo AFND-lambda: acepta cadenas que terminan en 'ab' o tienen 'b' tras lambda
@@ -906,11 +900,15 @@ s2, b -> s2
 def crear_vista_practica3(page: ft.Page) -> ft.Control:
     """
     Construye la interfaz de Práctica 3 con:
-    - Carga limpia de archivos .jff / .json / .xml (oculta código XML crudo y muestra banner de archivo)
-    - Vista previa gráfica en vivo (Canvas + DataTable) tanto de M1 como de M2
-    - Renderizado gráfico y tabular del autómata resultante
+    - Carga limpia de archivos sin mostrar código XML crudo
+    - Vista previa gráfica en vivo (Canvas + DataTable) de M1 y M2
+    - Botón de descarga de .JFF del autómata resultante
     """
-    ultimo_reporte_txt = {"contenido": ""}
+    ultimo_reporte_txt = {
+        "contenido": "",
+        "automata_resultado": None,
+        "nombre_jff": "automata_resultado.jff",
+    }
     estado_archivos = {
         "m1_auto": None,
         "m1_nombre": None,
@@ -918,7 +916,6 @@ def crear_vista_practica3(page: ft.Page) -> ft.Control:
         "m2_nombre": None,
     }
 
-    # Banner limpio cuando M1 fue cargado desde archivo (evita mostrar XML crudo)
     txt_banner_m1 = ft.Text("", size=13, weight=ft.FontWeight.W_500, color=ft.Colors.BLUE_200, expand=True)
     banner_archivo_m1 = ft.Container(
         visible=False,
@@ -940,7 +937,6 @@ def crear_vista_practica3(page: ft.Page) -> ft.Control:
         ),
     )
 
-    # Banner limpio cuando M2 fue cargado desde archivo
     txt_banner_m2 = ft.Text("", size=13, weight=ft.FontWeight.W_500, color=ft.Colors.BLUE_200, expand=True)
     banner_archivo_m2 = ft.Container(
         visible=False,
@@ -1022,7 +1018,6 @@ def crear_vista_practica3(page: ft.Page) -> ft.Control:
         return parsear_automata_desde_texto(editor_automata_2.value or "")
 
     def actualizar_vista_previa_entrada(e=None):
-        """Renderiza en vivo el diagrama gráfico y tabla de transiciones del autómata activo."""
         alg = selector_algoritmo.value
         if alg == "er_a_automata":
             contenedor_vista_previa.controls = []
@@ -1219,6 +1214,37 @@ def crear_vista_practica3(page: ft.Page) -> ft.Control:
         except Exception as ex:
             notificar(page, f"Error al descargar reporte: {ex}", es_error=True)
 
+    async def guardar_jff_resultado_click(e):
+        auto_res = ultimo_reporte_txt.get("automata_resultado")
+        if auto_res is None:
+            notificar(page, "Ejecuta primero un algoritmo que genere un autómata resultante.", es_error=True)
+            return
+
+        nombre_archivo = ultimo_reporte_txt.get("nombre_jff") or "automata_resultado.jff"
+        ruta_temp = os.path.join(UPLOAD_DIR, nombre_archivo)
+        try:
+            FormatosAutomata.guardar_jff(auto_res, ruta_temp)
+            with open(ruta_temp, "rb") as f:
+                contenido_bytes = f.read()
+
+            await picker_guardar_p3.save_file(
+                dialog_title="Descargar Autómata Resultante (.jff para JFLAP)",
+                file_name=nombre_archivo,
+                src_bytes=contenido_bytes,
+                file_type=ft.FilePickerFileType.CUSTOM,
+                allowed_extensions=["jff"],
+            )
+            notificar(page, f"Descarga de '{nombre_archivo}' iniciada en el navegador.")
+        except Exception as ex:
+            notificar(page, f"Error al exportar .jff: {ex}", es_error=True)
+
+    btn_descargar_jff_p3 = ft.OutlinedButton(
+        "Descargar .JFF Resultado",
+        icon=ft.Icons.DOWNLOAD_FOR_OFFLINE,
+        disabled=True,
+        on_click=guardar_jff_resultado_click,
+    )
+
     selector_algoritmo = ft.Dropdown(
         label="Algoritmo / Operación de Práctica 3",
         value="cerradura_lambda",
@@ -1251,7 +1277,6 @@ def crear_vista_practica3(page: ft.Page) -> ft.Control:
         btn_cargar_m2.visible = es_equiv
         campo_er.visible = es_er
 
-        # Mostrar banner o editor manual según si hay archivo cargado
         if es_er:
             banner_archivo_m1.visible = False
             editor_automata_1.visible = False
@@ -1283,7 +1308,6 @@ def crear_vista_practica3(page: ft.Page) -> ft.Control:
     selector_algoritmo.on_select = al_cambiar_algoritmo
 
     def renderizar_bloque_automata_resultado(auto_res: Automata, titulo_bloque: str) -> ft.Control:
-        """Agrupa el diagrama gráfico y la tabla de transiciones del autómata resultante."""
         return ft.ResponsiveRow(
             [
                 ft.Column(
@@ -1315,6 +1339,8 @@ def crear_vista_practica3(page: ft.Page) -> ft.Control:
         alg = selector_algoritmo.value
         controles_salida: list[ft.Control] = []
         lineas_txt: list[str] = []
+        ultimo_reporte_txt["automata_resultado"] = None
+        btn_descargar_jff_p3.disabled = True
 
         try:
             if alg == "er_a_automata":
@@ -1324,6 +1350,10 @@ def crear_vista_practica3(page: ft.Page) -> ft.Control:
                 if not er:
                     raise ValueError("Ingresa una expresión regular válida.")
                 auto_res = er_a_automata(er)
+
+                ultimo_reporte_txt["automata_resultado"] = auto_res
+                ultimo_reporte_txt["nombre_jff"] = "automata_thompson.jff"
+                btn_descargar_jff_p3.disabled = False
 
                 encabezado = f"CONVERSIÓN ER → AUTÓMATA (THOMPSON): '{er}'"
                 lineas_txt.extend([encabezado, serializar_automata_texto(auto_res)])
@@ -1398,6 +1428,10 @@ def crear_vista_practica3(page: ft.Page) -> ft.Control:
 
                 elif alg == "eliminacion_lambda":
                     afn_sin_l, rep = transformar_afn_sin_lambda_detallado(m1)
+                    ultimo_reporte_txt["automata_resultado"] = afn_sin_l
+                    ultimo_reporte_txt["nombre_jff"] = "afn_sin_lambda.jff"
+                    btn_descargar_jff_p3.disabled = False
+
                     lineas = [
                         "=== ELIMINACIÓN DE TRANSICIONES LAMBDA (AFN-λ → AFN) ===",
                         f"Finales originales: {rep['finales_originales']}",
@@ -1422,6 +1456,10 @@ def crear_vista_practica3(page: ft.Page) -> ft.Control:
 
                 elif alg == "subconjuntos":
                     afd, rep = construccion_subconjuntos_detallada(m1)
+                    ultimo_reporte_txt["automata_resultado"] = afd
+                    ultimo_reporte_txt["nombre_jff"] = "afd_subconjuntos.jff"
+                    btn_descargar_jff_p3.disabled = False
+
                     lineas = [
                         "=== CONSTRUCCIÓN DE SUBCONJUNTOS (AFN → AFD) ===",
                         f"Subconjunto inicial S0 = {rep['subconjunto_inicial']}",
@@ -1444,6 +1482,10 @@ def crear_vista_practica3(page: ft.Page) -> ft.Control:
 
                 elif alg == "inaccesibles":
                     depurado, rep = eliminar_estados_inaccesibles_detallado(m1)
+                    ultimo_reporte_txt["automata_resultado"] = depurado
+                    ultimo_reporte_txt["nombre_jff"] = "automata_sin_inaccesibles.jff"
+                    btn_descargar_jff_p3.disabled = False
+
                     lineas = [
                         "=== ELIMINACIÓN DE ESTADOS INACCESIBLES ===",
                         f"Estados originales: {rep['estados_originales']}",
@@ -1462,6 +1504,10 @@ def crear_vista_practica3(page: ft.Page) -> ft.Control:
 
                 elif alg == "minimizacion":
                     afd_min = minimizar_afd(m1)
+                    ultimo_reporte_txt["automata_resultado"] = afd_min
+                    ultimo_reporte_txt["nombre_jff"] = "afd_minimizado.jff"
+                    btn_descargar_jff_p3.disabled = False
+
                     rep_min = getattr(afd_min, "reporte_minimizacion", {})
                     lineas = [
                         "=== MINIMIZACIÓN DE AFD (HOPCROFT / PARTICIONES) ===",
@@ -1605,6 +1651,7 @@ def crear_vista_practica3(page: ft.Page) -> ft.Control:
                                         on_click=cargar_m1_click,
                                     ),
                                     btn_cargar_m2,
+                                    btn_descargar_jff_p3,
                                     ft.OutlinedButton(
                                         "Descargar Reporte",
                                         icon=ft.Icons.DOWNLOAD,
