@@ -1,5 +1,11 @@
+<<<<<<< HEAD
 # CARPETA LOCAL IGNORADA
 IGNORE/
+=======
+# CARPETA LOCAL EXCLUIDA (DOCUMENTOS Y MATERIALES IGNORADOS)
+IGNORE/
+IGNORE/**
+>>>>>>> master
 
 # BASE DE DATOS Y CONTENEDORES
 # IGNORA ARCHIVOS DE PYTHON
@@ -29,4 +35,7 @@ desktop.ini
 *~
 *.pdf
 CONTEXTO/
+uploads/*
+!uploads/.gitkeep
+
 
