@@ -186,3 +186,74 @@ O para ejecutar la suite completa del repositorio:
 ```bash
 python -m pytest tests/ -q
 ```
+
+---
+
+# Práctica 4: "Uso de las Expresiones Regulares y Extensión de Software para Convertir Expresiones Regulares (Teorema de Kleene Bidireccional y Validadores)"
+
+* **Fecha Límite de Entrega:** (consultar con el profesor)
+* **Etiqueta Git de Entrega:** `practica4`
+
+---
+
+## Índice de la Práctica 4
+
+### Ejercicio 1: Monografía de Investigación — Expresiones Regulares
+* **Documento:** [01-investigacion.md](docs/practica4/01-investigacion.md)
+* Contenido: Definición formal (jerarquía de Chomsky, Teorema de Kleene), leyes algebraicas, Lema de Bombeo aplicado a referencias hacia atrás $(a^*)b\backslash 1$, y cinco aplicaciones prácticas.
+
+### Ejercicio 2: De Expresión Regular a Autómata (Thompson + Hopcroft)
+* **Documento Técnico:** [02-er-a-automata.md](docs/practica4/02-er-a-automata.md)
+* **Módulos Desarrollados:**
+  * [`src/parser_er.py`](src/parser_er.py): Tokenizer, AST sintáctico con precedencia (* > concat > +).
+  * [`src/er_a_automata.py`](src/er_a_automata.py): Construcción inductiva de Thompson + pipeline a AFD mínimo + alias de integración.
+* **Casos Cubiertos:** Lista 3 (241–253) y Lista 4 (272, 273, 278).
+
+### Ejercicio 3: De Autómata a Expresión Regular (GNFA)
+* **Documento Técnico:** [03-automata-a-er.md](docs/practica4/03-automata-a-er.md)
+* **Módulo Desarrollado:**
+  * [`src/automata_a_er.py`](src/automata_a_er.py): Eliminación progresiva de estados en GNFA con simplificación algebraica.
+* **Casos Cubiertos:** Lista 3 (254–258) y Lista 4 (276, 277). Verificación formal de equivalencia contra expresiones de P3.
+
+### Ejercicio 4: Validadores de Patrones Reales
+* **Documento Técnico:** [04-validadores.md](docs/practica4/04-validadores.md)
+* **Módulo Desarrollado:**
+  * [`src/validadores.py`](src/validadores.py): 3 validadores formales (Email, Teléfono México 10 dígitos, URL). Generadores con ≥ 170 casos válidos e inválidos cada uno (semilla fija 42).
+* **Suite de Pruebas:** [`tests/test_validadores.py`](tests/test_validadores.py) — 100% de congruencia con `re.fullmatch` sobre ≥ 500 cadenas.
+
+### Pruebas Adicionales — Casos Oficiales P4:
+* **Suite:** [`tests/test_casos_oficiales_p4.py`](tests/test_casos_oficiales_p4.py)
+* Cubre: 28 pruebas parametrizadas sobre Lista 3 (241–253), Lista 4 (272, 273, 278) y los 5 autómatas de P3 (Ejercicio 3).
+
+### Bibliografías:
+* Consultar referencias en: [REFERENCIAS_BIBLIOGRAFICAS.md](REFERENCIAS_BIBLIOGRAFICAS.md)
+
+---
+
+## Instrucciones de Uso — Nuevas Funciones (Práctica 4)
+
+### 1. Compilar una Expresión Regular
+```python
+from er_a_automata import er_a_afnd_lambda, er_a_afd_minimo
+auto_thompson = er_a_afnd_lambda("(a+b)*ab")
+afd_minimo    = er_a_afd_minimo("(a+b)*ab")
+```
+
+### 2. Convertir un Autómata a Expresión Regular
+```python
+from automata_a_er import automata_a_expresion_regular
+er, historial = automata_a_expresion_regular(afd_minimo)
+print(er)
+```
+
+### 3. Validar patrones reales
+```python
+from validadores import obtener_todos_los_validadores
+for v in obtener_todos_los_validadores():
+    print(v.nombre, "→", v.er_formal)
+```
+
+### 4. Ejecutar todas las pruebas
+```bash
+pytest -v
+```
