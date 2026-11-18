@@ -1,34 +1,76 @@
 """
-Módulo del Motor Formal de Autómatas Finitos.
+===============================================================================
+MÓDULO DEL MOTOR FORMAL DE AUTÓMATAS FINITOS (AFD, AFND, AFND-λ)
+===============================================================================
+Unidad de Aprendizaje: Teoría de la Computación
+Institución: Escuela Superior de Cómputo (ESCOM - IPN)
+Autores: Antonio Navarro Domínguez & Mario García Castillo
 
-Proyecto: Prácticas de Teoría de la Computación (ESCOM-IPN)
-Autor: Antonio Navarro Domínguez (A7LAS-1) <tonyex1400@gmail.com>
-Responsabilidad: Definición de la quíntupla M = (Q, Sigma, delta, q0, F),
-                motor de simulación para AFD, AFND y AFND-lambda,
-                cálculo de lambda-clausuras y trazas paso a paso.
+Descripción:
+    Implementa el motor matemático formal de autómatas finitos según la quíntupla
+    estándar M = (Q, Sigma, delta, q0, F). Provee:
+      - Modelado formal de estados, símbolos y transiciones (incluyendo λ / épsilon).
+      - Clasificación automática entre AFD, AFND y AFND-lambda.
+      - Cálculo de la lambda-clausura reflexiva y transitiva (Sección 2.3).
+      - Función de transición extendida y mover entre conjuntos de estados.
+      - Motor de simulación paso a paso con registro completo de la traza de ejecución
+        y exploración concurrente de bifurcaciones no deterministas (Sección 3.3).
+      - Validación de consistencia matemática de la quíntupla.
+
+Navegación del Módulo:
+    1. Estructuras de Datos Elementales: Transicion, Estado
+    2. Clase Principal: Automata (Inicialización y Mutadores de Quíntupla)
+    3. Clasificación Formal y Representación Tabular
+    4. Algoritmos de Clausura Lambda y Transición Extendida
+    5. Motor de Simulación y Traza de Ejecución Paso a Paso
+    6. Verificación de Consistencia Matemática
+===============================================================================
 """
 
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, List, Set, Tuple, Optional, Any
 from collections import deque
 
 
+# =============================================================================
+# SECCIÓN 1: ESTRUCTURAS DE DATOS ELEMENTALES
+# =============================================================================
+
 @dataclass
 class Transicion:
-    """Representa una transición individual delta(origen, simbolo) -> destino."""
+    """
+    Representa una transición formal individual: delta(origen, simbolo) -> destino.
+    
+    Atributos:
+        origen (str): Estado de procedencia q_i.
+        simbolo (str): Símbolo de transición. La cadena vacía '' representa lambda/épsilon.
+        destino (str): Estado alcanzado q_j.
+    """
     origen: str
-    simbolo: str  # Cadena vacía '' representa la transición nula/lambda/épsilon
+    simbolo: str
     destino: str
 
     def es_lambda(self) -> bool:
-        """Indica si la transición es nula (lambda / épsilon)."""
+        """
+        Determina si la transición es nula (lambda / épsilon).
+        Admite '', 'lambda', 'epsilon', 'λ', 'ε'.
+        """
         return self.simbolo == "" or self.simbolo.lower() in ("lambda", "epsilon", "λ", "ε")
 
 
 @dataclass
 class Estado:
-    """Representa un estado formal de un autómata con metadatos gráficos."""
+    """
+    Representa un estado formal de un autómata finito junto con metadatos gráficos.
+    
+    Atributos:
+        nombre (str): Identificador único del estado (ej. 'q0', 'q1').
+        es_inicial (bool): Verdadero si q in {q0}.
+        es_final (bool): Verdadero si q in F (estado de aceptación).
+        pos_x (float): Coordenada horizontal para renderizado en JFLAP.
+        pos_y (float): Coordenada vertical para renderizado en JFLAP.
+    """
     nombre: str
     es_inicial: bool = False
     es_final: bool = False
@@ -36,13 +78,20 @@ class Estado:
     pos_y: float = 100.0
 
 
+# =============================================================================
+# SECCIÓN 2: CLASE PRINCIPAL AUTOMATA (QUÍNTUPLA FORMAL)
+# =============================================================================
+
 class Automata:
     """
-    Representa un Autómata Finito formal M = (Q, Sigma, delta, q0, F).
+    Representación matemática formal de un Autómata Finito M = (Q, Sigma, delta, q0, F).
     Soporta autómatas deterministas (AFD), no deterministas (AFND) y
     con transiciones lambda (AFND-lambda).
     """
 
+    # -------------------------------------------------------------------------
+    # 2.1 Inicialización y Gestión de Componentes
+    # -------------------------------------------------------------------------
     def __init__(
         self,
         alfabeto: Optional[Set[str]] = None,
@@ -50,7 +99,8 @@ class Automata:
         estado_inicial: Optional[str] = None,
         estados_aceptacion: Optional[Set[str]] = None,
         tipo: str = "AFD"
-    ):
+    ) -> None:
+        """Inicializa la quíntupla matemática formal."""
         self.alfabeto: Set[str] = set(alfabeto) if alfabeto else set()
         self.estados: Set[str] = set(estados) if estados else set()
         self.estado_inicial: Optional[str] = estado_inicial
@@ -67,12 +117,15 @@ class Automata:
         pos_x: float = 100.0,
         pos_y: float = 100.0
     ) -> None:
-        """Registra un nuevo estado en el autómata con metadatos de renderizado."""
+        """
+        Registra un estado q in Q con sus condiciones inicial/final y coordenadas.
+        """
         self.estados.add(nombre)
         if es_inicial:
             self.estado_inicial = nombre
         if es_final:
             self.estados_aceptacion.add(nombre)
+
         self.metadatos_estados[nombre] = Estado(
             nombre=nombre,
             es_inicial=es_inicial,
@@ -82,17 +135,20 @@ class Automata:
         )
 
     def agregar_simbolo(self, simbolo: str) -> None:
-        """Agrega un símbolo al alfabeto formal del autómata."""
+        """
+        Registra un símbolo formal a in Sigma.
+        Ignora símbolos lambda/épsilon ya que no forman parte del alfabeto Sigma.
+        """
         if simbolo != "" and simbolo.lower() not in ("lambda", "epsilon", "λ", "ε"):
             self.alfabeto.add(simbolo)
 
     def agregar_transicion(self, origen: str, simbolo: str, destino: str) -> None:
         """
-        Agrega una transición formal delta(origen, simbolo) -> destino.
-        Normaliza símbolos lambda a la cadena vacía ''.
+        Registra una transición formal delta(origen, simbolo) -> destino.
+        Normaliza etiquetas de transición vacías o equivalentes a lambda como ''.
         """
         simbolo_normalizado = "" if simbolo.lower() in ("lambda", "epsilon", "λ", "ε", "") else simbolo
-        
+
         self.estados.add(origen)
         self.estados.add(destino)
         if simbolo_normalizado:
@@ -101,12 +157,22 @@ class Automata:
         trans = Transicion(origen=origen, simbolo=simbolo_normalizado, destino=destino)
         if trans not in self.transiciones:
             self.transiciones.append(trans)
-        
-        # Ajuste dinámico del tipo de autómata
+
+        # Recalcular la clasificación del autómata
         self._actualizar_tipo()
 
+
+    # =========================================================================
+    # SECCIÓN 3: CLASIFICACIÓN FORMAL Y REPRESENTACIÓN TABULAR
+    # =========================================================================
+
     def _actualizar_tipo(self) -> None:
-        """Evalúa las transiciones registradas para clasificar el autómata."""
+        """
+        Clasifica automáticamente el autómata analizando las transiciones registradas:
+          - AFND-lambda: Si posee al menos una transición nula.
+          - AFND: Si no tiene transiciones lambda pero existen bifurcaciones (|delta(q, a)| > 1).
+          - AFD: Si para cada par (q, a) existe como máximo una transición y no hay lambdas.
+        """
         tiene_lambda = any(t.es_lambda() for t in self.transiciones)
         if tiene_lambda:
             self.tipo = "AFND-lambda"
@@ -121,12 +187,12 @@ class Automata:
                     break
             if es_nd:
                 break
-        
+
         self.tipo = "AFND" if es_nd else "AFD"
 
     def obtener_tabla_transiciones(self) -> Dict[str, Dict[str, Set[str]]]:
         """
-        Retorna la representación tabular canónica de delta:
+        Retorna la representación tabular estándar de la función de transición delta:
         { estado_origen: { simbolo: {estados_destino} } }
         """
         tabla: Dict[str, Dict[str, Set[str]]] = {q: {} for q in self.estados}
@@ -136,15 +202,51 @@ class Automata:
             tabla[t.origen][t.simbolo].add(t.destino)
         return tabla
 
+    def es_determinista(self) -> Tuple[bool, str]:
+        """
+        Verifica formalmente si el autómata cumple estrictamente los axiomas de un AFD:
+          1. delta no contiene ninguna transición nula (lambda / épsilon).
+          2. Para cada estado q in Q y cada símbolo a in Sigma, existe como máximo
+             un estado sucesor delta(q, a).
+             
+        Retorna:
+            (es_determinado: bool, justificacion: str)
+        """
+        for t in self.transiciones:
+            if t.es_lambda():
+                return False, f"Contiene transición lambda desde '{t.origen}' hacia '{t.destino}'."
+
+        tabla = self.obtener_tabla_transiciones()
+        for est, trans_dict in tabla.items():
+            for simb, dests in trans_dict.items():
+                if len(dests) > 1:
+                    return False, f"El estado '{est}' tiene transiciones múltiples para el símbolo '{simb}': {sorted(list(dests))}."
+
+        return True, "El autómata es determinista (AFD)."
+
+
+    # =========================================================================
+    # SECCIÓN 4: ALGORITMOS DE CLAUSURA LAMBDA Y FUNCIÓN MOVER
+    # =========================================================================
+
     def clausura_lambda(self, conjunto_estados: Set[str]) -> Set[str]:
         """
         Calcula la lambda-clausura (cerradura épsilon) reflexiva y transitiva
-        de un conjunto de estados:
-        lambda-cl(S) = S U { q' | existe camino de q en S hacia q' con etiquetas lambda }
+        de un conjunto de estados S subseteq Q:
+        
+        Definición formal:
+            lambda-cl(S) = S union { q' in Q | existe camino q ->* q' etiquetado con lambda }
+            
+        Parámetros:
+            conjunto_estados (Set[str]): Conjunto de estados iniciales S.
+            
+        Retorna:
+            Set[str]: Conjunto completo de estados alcanzables mediante transiciones lambda.
         """
         clausura = set(conjunto_estados)
         cola = deque(conjunto_estados)
 
+        # Mapa rápido de adyacencias lambda
         trans_lambda: Dict[str, Set[str]] = {q: set() for q in self.estados}
         for t in self.transiciones:
             if t.es_lambda():
@@ -164,8 +266,15 @@ class Automata:
 
     def mover(self, conjunto_estados: Set[str], simbolo: str) -> Set[str]:
         """
-        Calcula la función de transición extendida de un conjunto:
-        Delta(S, a) = Union_{q in S} delta(q, a)
+        Aplica la función de transición extendida sobre un conjunto de estados:
+            Delta(S, a) = Union_{q in S} delta(q, a)
+            
+        Parámetros:
+            conjunto_estados (Set[str]): Estados fuente S.
+            simbolo (str): Símbolo leído a in Sigma.
+            
+        Retorna:
+            Set[str]: Conjunto de estados destino alcanzados en exactamente un paso.
         """
         destinos: Set[str] = set()
         for t in self.transiciones:
@@ -173,49 +282,43 @@ class Automata:
                 destinos.add(t.destino)
         return destinos
 
-    def es_determinista(self) -> Tuple[bool, str]:
-        """
-        Verifica formalmente si el autómata cumple con los axiomas de un AFD:
-        1. No contiene transiciones lambda.
-        2. Para cada estado q in Q y cada simbolo a in Sigma, existe como maximo
-           una transicion delta(q, a).
-        """
-        for t in self.transiciones:
-            if t.es_lambda():
-                return False, f"Contiene transición lambda desde el estado '{t.origen}' hacia '{t.destino}'."
 
-        tabla = self.obtener_tabla_transiciones()
-        for est, trans_dict in tabla.items():
-            for simb, dests in trans_dict.items():
-                if len(dests) > 1:
-                    return False, f"El estado '{est}' tiene transiciones múltiples no deterministas para el símbolo '{simb}': {sorted(list(dests))}."
-
-        return True, "El autómata es determinista (AFD)."
+    # =========================================================================
+    # SECCIÓN 5: MOTOR DE SIMULACIÓN Y TRAZA PASO A PASO
+    # =========================================================================
 
     def simular_cadena(self, cadena: str) -> Tuple[bool, List[Dict[str, Any]]]:
         """
-        Simula el procesamiento completo de una cadena de entrada.
-        Soporta AFD, AFND y AFND-lambda siguiendo todos los caminos posibles concurrentemente.
+        Simula el procesamiento formal de una cadena de entrada w in Sigma*.
+        Soporta simultáneamente AFD, AFND y AFND-lambda siguiendo concurrentemente
+        todas las ramas posibles y preservando la traza completa de ejecución
+        (Sección 3.3 de la especificación).
         
+        Parámetros:
+            cadena (str): Cadena de entrada a evaluar ('' para la cadena vacía lambda).
+            
         Retorna:
             (aceptada: bool, traza: List[Dict[str, Any]])
-        
-        Cada registro de la traza contiene:
-            paso: int,
-            simbolo_leido: Optional[str],
-            estados_previos: List[str],
-            clausura_previa: List[str],
-            transiciones_tomadas: List[Dict[str, str]],
-            estados_posteriores: List[str],
-            clausura_posterior: List[str],
-            es_aceptacion: bool
+            
+        Estructura de cada paso en la traza:
+            {
+                "paso": int,
+                "simbolo_leido": Optional[str],
+                "estados_previos": List[str],
+                "clausura_previa": List[str],
+                "transiciones_tomadas": List[Dict[str, str]],
+                "estados_posteriores": List[str],
+                "clausura_posterior": List[str],
+                "es_aceptacion": bool,
+                "error": Optional[str]
+            }
         """
         traza: List[Dict[str, Any]] = []
 
         if not self.estado_inicial:
             return False, [{"error": "El autómata no tiene estado inicial definido."}]
 
-        # Estado inicial y su lambda-clausura
+        # Paso 0: Estado inicial y cálculo de su lambda-clausura reflexiva/transitiva
         activos_iniciales = {self.estado_inicial}
         activos = self.clausura_lambda(activos_iniciales)
 
@@ -230,7 +333,7 @@ class Automata:
             "es_aceptacion": any(q in self.estados_aceptacion for q in activos)
         })
 
-        # Procesamiento secuencial de la cadena
+        # Procesamiento secuencial símbolo por símbolo de la cadena
         for i, char in enumerate(cadena, start=1):
             if char not in self.alfabeto:
                 traza.append({
@@ -252,7 +355,6 @@ class Automata:
                     trans_usadas.append({"desde": t.origen, "lee": t.simbolo, "hacia": t.destino})
 
             clausura_nueva = self.clausura_lambda(destinos_directos)
-
             es_final_paso = any(q in self.estados_aceptacion for q in clausura_nueva)
 
             traza.append({
@@ -268,25 +370,38 @@ class Automata:
 
             activos = clausura_nueva
             if not activos:
-                # Se agotaron los caminos válidos (bloqueo / sumidero)
+                # Se agotaron todas las ramas posibles (camino sin salida / bloqueo)
                 break
 
         aceptada = any(q in self.estados_aceptacion for q in activos)
         return aceptada, traza
 
+
+    # =========================================================================
+    # SECCIÓN 6: VALIDACIÓN DE CONSISTENCIA FORMAL
+    # =========================================================================
+
     def validar_consistencia(self) -> Tuple[bool, List[str]]:
-        """Valida que la quíntupla formal sea matemáticamente consistente."""
+        """
+        Verifica que los cinco componentes de la quíntupla M = (Q, Sigma, delta, q0, F)
+        sean matemáticamente válidos y congruentes entre sí.
+        
+        Retorna:
+            (es_consistente: bool, errores: List[str])
+        """
         errores: List[str] = []
+
         if not self.estados:
             errores.append("El conjunto de estados Q está vacío.")
+
         if not self.estado_inicial:
             errores.append("No se ha definido el estado inicial q0.")
         elif self.estado_inicial not in self.estados:
-            errores.append(f"El estado inicial '{self.estado_inicial}' no pertenece al conjunto de estados Q.")
+            errores.append(f"El estado inicial '{self.estado_inicial}' no pertenece al conjunto Q.")
 
         for f in self.estados_aceptacion:
             if f not in self.estados:
-                errores.append(f"El estado de aceptación '{f}' no pertenece al conjunto de estados Q.")
+                errores.append(f"El estado de aceptación '{f}' no pertenece al conjunto Q.")
 
         for t in self.transiciones:
             if t.origen not in self.estados:
@@ -294,7 +409,6 @@ class Automata:
             if t.destino not in self.estados:
                 errores.append(f"Transición con destino inválido '{t.destino}'.")
             if t.simbolo != "" and t.simbolo not in self.alfabeto:
-                errores.append(f"Transición con símbolo '{t.simbolo}' que no pertenece a Sigma.")
+                errores.append(f"Transición con símbolo '{t.simbolo}' que no pertenece al alfabeto Sigma.")
 
         return len(errores) == 0, errores
-

@@ -1,3 +1,7 @@
+# CARPETA LOCAL EXCLUIDA (DOCUMENTOS Y MATERIALES IGNORADOS)
+IGNORE/
+IGNORE/**
+
 # BASE DE DATOS Y CONTENEDORES
 # IGNORA ARCHIVOS DE PYTHON
 **/venv/
@@ -26,4 +30,7 @@ desktop.ini
 *~
 *.pdf
 CONTEXTO/
+uploads/*
+!uploads/.gitkeep
+
 
