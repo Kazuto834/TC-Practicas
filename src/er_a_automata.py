@@ -20,12 +20,8 @@ from parser_er import (
     NodoConcatenacion,
     NodoEstrella
 )
-from algoritmos_afn import (
-    construccion_subconjuntos,
-    transformar_afn_sin_lambda_detallado,
-)
+from algoritmos_afn import construccion_subconjuntos
 from minimizacion import minimizar_afd
-
 
 
 class CompiladorThompson:
@@ -168,40 +164,4 @@ def er_a_afd_minimo(expresion: str) -> Automata:
     afd_completo = construccion_subconjuntos(afnd_lambda)
     afd_min = minimizar_afd(afd_completo)
     return afd_min
-
-
-# Alias para compatibilidad con suites de integración
-er_a_automata = er_a_afnd_lambda
-
-
-def er_a_pipeline_completo(expresion: str) -> dict:
-    """
-    Canalización completa de compilación (Ejercicio 2 - Práctica 4):
-      Expresión Regular
-        → AFND-λ (Construcción inductiva de Thompson)
-        → AFN sin λ (Eliminación formal de transiciones λ)
-        → AFD (Construcción de subconjuntos)
-        → AFD Mínimo (Refinamiento de particiones)
-    
-    Retorna un diccionario con cada autómata intermedio listo para inspección o exportación .jff.
-    """
-    afnd_lambda = er_a_afnd_lambda(expresion)
-    afn_sin_lambda, reporte_sin_lambda = transformar_afn_sin_lambda_detallado(afnd_lambda)
-    afd_subconjuntos = construccion_subconjuntos(afn_sin_lambda)
-    afd_minimo = minimizar_afd(afd_subconjuntos)
-
-    return {
-        "expresion": expresion,
-        "afnd_lambda": afnd_lambda,
-        "afn_sin_lambda": afn_sin_lambda,
-        "reporte_sin_lambda": reporte_sin_lambda,
-        "afd": afd_subconjuntos,
-        "afd_minimo": afd_minimo,
-        "estados_afnd_lambda": len(afnd_lambda.estados),
-        "estados_afn_sin_lambda": len(afn_sin_lambda.estados),
-        "estados_afd": len(afd_subconjuntos.estados),
-        "estados_afd_minimo": len(afd_minimo.estados),
-    }
-
-
 

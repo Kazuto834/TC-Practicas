@@ -142,22 +142,3 @@ def automata_a_expresion_regular(auto: Automata) -> Tuple[str, List[Dict[str, st
 
     return _simplificar_er(er_final), historial
 
-
-def comparar_expresiones_por_equivalencia(er1: str, er2: str) -> Tuple[bool, str]:
-    """
-    Compara dos expresiones regulares (por ejemplo, la obtenida por GNFA vs JFLAP)
-    comprobando si denotan el mismo lenguaje formal mediante:
-      ER₁ → AFD Mínimo₁
-      ER₂ → AFD Mínimo₂
-      AFD₁ ≡ AFD₂ (mediante isomorfismo de estados o cociente mínimo).
-    """
-    from er_a_automata import er_a_afd_minimo
-    from equivalencia_afd import decidir_equivalencia_detallada
-
-    afd1 = er_a_afd_minimo(er1)
-    afd2 = er_a_afd_minimo(er2)
-    son_eq, mensaje, detalles = decidir_equivalencia_detallada(afd1, afd2)
-
-    return son_eq, mensaje
-
-
