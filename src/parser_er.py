@@ -4,13 +4,14 @@ Módulo de Análisis Léxico y Sintáctico de Expresiones Regulares (Práctica 4
 Proyecto: Prácticas de Teoría de la Computación (ESCOM-IPN)
 Autor: Antonio Navarro Domínguez (A7LAS-1) <tonyex1400@gmail.com>
 Responsabilidad: Tokenizer y Parser sintáctico descendente recursivo
-                con precedencia de operadores (* > concatenación > +)
+                con precedencia de operadores (* > concatenación > +),
+                soporte de clases de símbolos (macros), escapes literales
                 y diagnóstico posicional exacto de errores sintácticos.
 """
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import List, Optional, Set
+from typing import Dict, Optional, Set
 
 
 # =============================================================================
@@ -63,25 +64,69 @@ class NodoEstrella(NodoAST):
 # PARSER DESCENDENTE RECURSIVO CON DIAGNÓSTICO POSICIONAL
 # =============================================================================
 class ErrorSintacticoER(Exception):
-    def __init__(self, mensaje: str, posicion: int):
+    """Error sintáctico que indica la posición exacta (índice y columna) del fallo."""
+
+    def __init__(self, mensaje: str, posicion: int, expresion: str = ""):
         self.mensaje = mensaje
         self.posicion = posicion
-        super().__init__(f"Error sintáctico en columna {posicion}: {mensaje}")
+        self.expresion = expresion
+        if expresion:
+            puntero = " " * max(0, posicion) + "^"
+            detalle = (
+                f"Error sintáctico en posición {posicion} (columna {posicion + 1}): {mensaje}\n"
+                f"  Expresión: {expresion}\n"
+                f"             {puntero}"
+            )
+        else:
+            detalle = f"Error sintáctico en posición {posicion} (columna {posicion + 1}): {mensaje}"
+        super().__init__(detalle)
+
+
+# Alias de compatibilidad
+ErrorSintaxisER = ErrorSintacticoER
+
+
+def expandir_macros_er(expresion: str, macros: Optional[Dict[str, str]] = None) -> str:
+    """
+    Expande abreviaturas / clases de símbolos definidas por el usuario
+    (por ejemplo: D = 0+1+2+3+4+5+6+7+8+9) respetando caracteres escapados con '\\'.
+    """
+    if not macros:
+        return expresion
+
+    salida = []
+    i = 0
+    n = len(expresion)
+    while i < n:
+        ch = expresion[i]
+        if ch == "\\" and i + 1 < n:
+            salida.append(expresion[i:i + 2])
+            i += 2
+            continue
+        if ch in macros:
+            salida.append(f"({macros[ch]})")
+        else:
+            salida.append(ch)
+        i += 1
+    return "".join(salida)
 
 
 class ParserExpresionRegular:
     """
-    Gramática formal:
-      E -> T ('+' T)*          (Unión)
-      T -> F (F)*              (Concatenación implícita)
-      F -> Atom ('*')*         (Cerradura de Kleene)
-      Atom -> Simbolo | 'λ' | '∅' | '(' E ')'
+    Gramática formal (precedencia: * > concatenación > +):
+      E    -> T ('+' T)*          (Unión)
+      T    -> F (F)*              (Concatenación implícita)
+      F    -> Atom ('*')*         (Cerradura de Kleene)
+      Atom -> Simbolo | '\\' char | 'λ' | '∅' | '(' E ')'
     """
 
-    def __init__(self, expresion: str):
-        self.texto: str = expresion
+    OPERADORES_NO_SOPORTADOS = {"|", "?", "[", "]", "{", "}", "^", "$"}
+
+    def __init__(self, expresion: str, macros: Optional[Dict[str, str]] = None):
+        self.expresion_original: str = expresion
+        self.texto: str = expandir_macros_er(expresion, macros)
         self.pos: int = 0
-        self.longitud: int = len(expresion)
+        self.longitud: int = len(self.texto)
         self.alfabeto_detectado: Set[str] = set()
 
     def _mirar(self) -> Optional[str]:
@@ -96,24 +141,46 @@ class ParserExpresionRegular:
         if ch is not None:
             self.pos += 1
             return ch
-        raise ErrorSintacticoER("Fin inesperado de la expresión.", self.pos)
+        raise ErrorSintacticoER("Fin inesperado de la expresión.", self.pos, self.texto)
 
     def parsear(self) -> NodoAST:
         """Punto de entrada principal. Retorna la raíz del AST o lanza ErrorSintacticoER."""
-        if not self.texto.strip():
-            # Expresión vacía equivale a lambda
-            return NodoLambda()
+        if not self.texto or not self.texto.strip():
+            raise ErrorSintacticoER(
+                "La expresión regular no puede estar vacía (usa 'λ' para la palabra vacía).",
+                0,
+                self.texto,
+            )
 
         self.pos = 0
         ast = self._parse_union()
-        if self._mirar() is not None:
-            raise ErrorSintacticoER(f"Carácter inesperado '{self._mirar()}'.", self.pos)
+        sobrante = self._mirar()
+        if sobrante is not None:
+            if sobrante == ")":
+                raise ErrorSintacticoER(
+                    "Paréntesis de cierre ')' sin apertura correspondiente.",
+                    self.pos,
+                    self.texto,
+                )
+            raise ErrorSintacticoER(
+                f"Carácter inesperado '{sobrante}'.",
+                self.pos,
+                self.texto,
+            )
         return ast
 
     def _parse_union(self) -> NodoAST:
         izq = self._parse_concatenacion()
         while self._mirar() == "+":
+            pos_op = self.pos
             self._consumir()  # consumir '+'
+            siguiente = self._mirar()
+            if siguiente is None or siguiente in ("+", ")"):
+                raise ErrorSintacticoER(
+                    "Falta el operando derecho después del operador de unión '+'.",
+                    pos_op,
+                    self.texto,
+                )
             der = self._parse_concatenacion()
             izq = NodoUnion(izq=izq, der=der)
         return izq
@@ -128,7 +195,11 @@ class ParserExpresionRegular:
             factores.append(factor)
 
         if not factores:
-            raise ErrorSintacticoER("Se esperaba un operando antes del operador o fin de bloque.", self.pos)
+            raise ErrorSintacticoER(
+                "Se esperaba un operando antes del operador o fin de bloque.",
+                self.pos,
+                self.texto,
+            )
 
         resultado = factores[0]
         for f in factores[1:]:
@@ -145,26 +216,67 @@ class ParserExpresionRegular:
     def _parse_atomo(self) -> NodoAST:
         ch = self._mirar()
         if ch is None:
-            raise ErrorSintacticoER("Se esperaba un símbolo u operando al final de la expresión.", self.pos)
+            raise ErrorSintacticoER(
+                "Se esperaba un símbolo u operando al final de la expresión.",
+                self.pos,
+                self.texto,
+            )
 
         if ch == "(":
             pos_par = self.pos
             self._consumir()  # '('
+            if self._mirar() == ")":
+                raise ErrorSintacticoER(
+                    "Paréntesis vacíos '()' no permitidos; usa 'λ' para la palabra vacía.",
+                    pos_par,
+                    self.texto,
+                )
             sub_expr = self._parse_union()
             if self._mirar() != ")":
-                raise ErrorSintacticoER(f"Paréntesis abierto en pos {pos_par} sin cerrar.", self.pos)
+                raise ErrorSintacticoER(
+                    f"Paréntesis abierto en posición {pos_par} sin cerrar.",
+                    self.pos,
+                    self.texto,
+                )
             self._consumir()  # ')'
             return sub_expr
-        elif ch in ("λ", "ε", "\\"):
+
+        if ch == "\\":
+            pos_esc = self.pos
+            self.pos += 1  # consumir '\' sin saltar espacios siguientes
+            if self.pos >= self.longitud:
+                raise ErrorSintacticoER(
+                    "Barra invertida '\\' sin carácter escapado al final de la expresión.",
+                    pos_esc,
+                    self.texto,
+                )
+            literal = self.texto[self.pos]
+            self.pos += 1
+            self.alfabeto_detectado.add(literal)
+            return NodoSimbolo(simbolo=literal)
+
+        if ch in ("λ", "ε"):
             self._consumir()
             return NodoLambda()
-        elif ch in ("∅", "Ø"):
+
+        if ch in ("∅", "Ø"):
             self._consumir()
             return NodoVacio()
-        elif ch in ("+", "*", ")"):
-            raise ErrorSintacticoER(f"Operador '{ch}' en posición inválida.", self.pos)
-        else:
-            simb = self._consumir()
-            self.alfabeto_detectado.add(simb)
-            return NodoSimbolo(simbolo=simb)
 
+        if ch in ("+", "*", ")"):
+            raise ErrorSintacticoER(
+                f"Operador o delimitador '{ch}' en posición inválida.",
+                self.pos,
+                self.texto,
+            )
+
+        if ch in self.OPERADORES_NO_SOPORTADOS:
+            raise ErrorSintacticoER(
+                f"Símbolo '{ch}' no pertenece a la notación del curso (usa '+' para unión o '\\{ch}' como literal).",
+                self.pos,
+                self.texto,
+            )
+
+        simb = self._consumir()
+        self.alfabeto_detectado.add(simb)
+        return NodoSimbolo(simbolo=simb)

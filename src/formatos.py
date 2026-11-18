@@ -12,8 +12,8 @@ import json
 import math
 import os
 import xml.etree.ElementTree as ET
-from typing import Dict, List, Set, Optional
-from automata import Automata, Transicion, Estado
+from typing import Dict, List
+from automata import Automata
 
 
 class FormatosAutomata:
@@ -35,22 +35,18 @@ class FormatosAutomata:
 
         automaton_elem = root.find("automaton")
         if automaton_elem is None:
-            # En algunas versiones de JFLAP la raíz es directamente <automaton>
             automaton_elem = root if root.tag == "automaton" else None
             if automaton_elem is None:
                 raise ValueError("El archivo JFF no contiene el elemento raíz <automaton>.")
 
         auto = Automata()
         id_a_nombre: Dict[str, str] = {}
-        nombre_a_id: Dict[str, str] = {}
 
         # 1. Leer estados
         for state_elem in automaton_elem.findall("state"):
             state_id = state_elem.attrib.get("id", "")
             state_name = state_elem.attrib.get("name", f"q{state_id}")
-            
             id_a_nombre[state_id] = state_name
-            nombre_a_id[state_name] = state_id
 
             x_elem = state_elem.find("x")
             y_elem = state_elem.find("y")
@@ -65,7 +61,7 @@ class FormatosAutomata:
                 es_inicial=es_inicial,
                 es_final=es_final,
                 pos_x=pos_x,
-                pos_y=pos_y
+                pos_y=pos_y,
             )
 
         # 2. Leer transiciones
@@ -96,18 +92,20 @@ class FormatosAutomata:
         return auto
 
     @staticmethod
-    def guardar_jff(automata: Automata, ruta_salida: str) -> None:
+    def serializar_jff(automata: Automata) -> str:
         """
-        Exporta el autómata a un archivo .jff con formato nativo de JFLAP 7.1.
-        Genera coordenadas espaciales automáticas circulares si no están definidas.
+        Serializa el autómata a una cadena XML en formato nativo de JFLAP 7.1 (.jff).
         """
         root = ET.Element("structure")
         type_elem = ET.SubElement(root, "type")
         type_elem.text = "fa"
         automaton_elem = ET.SubElement(root, "automaton")
 
-        # Asignar identificadores numéricos ordenados para JFLAP
         estados_ordenados = sorted(list(automata.estados))
+        if automata.estado_inicial in estados_ordenados:
+            estados_ordenados.remove(automata.estado_inicial)
+            estados_ordenados.insert(0, automata.estado_inicial)
+
         nombre_a_id: Dict[str, str] = {nombre: str(i) for i, nombre in enumerate(estados_ordenados)}
 
         n = len(estados_ordenados)
@@ -121,9 +119,9 @@ class FormatosAutomata:
             if meta and (meta.pos_x != 100.0 or meta.pos_y != 100.0):
                 x_val, y_val = meta.pos_x, meta.pos_y
             else:
-                angulo = (2 * math.pi * i) / max(n, 1)
-                x_val = centro_x + radio * math.cos(angulo)
-                y_val = centro_y + radio * math.sin(angulo)
+                angulo = -math.pi / 2.0 + (2 * math.pi * i) / max(n, 1)
+                x_val = centro_x + (radio * math.cos(angulo) if n > 1 else 0.0)
+                y_val = centro_y + (radio * math.sin(angulo) if n > 1 else 0.0)
 
             state_elem = ET.SubElement(automaton_elem, "state", id=state_id, name=nombre)
             ET.SubElement(state_elem, "x").text = f"{x_val:.1f}"
@@ -141,12 +139,18 @@ class FormatosAutomata:
             read_elem = ET.SubElement(trans_elem, "read")
             if trans.simbolo:
                 read_elem.text = trans.simbolo
-            # Si es lambda se deja <read/> vacío por especificación de JFLAP
 
-        xml_str = ET.tostring(root, encoding="utf-8")
-        header = b'<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
-        with open(ruta_salida, "wb") as f:
-            f.write(header + xml_str)
+        xml_str = ET.tostring(root, encoding="unicode")
+        return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' + xml_str
+
+    @staticmethod
+    def guardar_jff(automata: Automata, ruta_salida: str) -> None:
+        """
+        Exporta el autómata a un archivo .jff en disco con formato nativo de JFLAP 7.1.
+        """
+        contenido = FormatosAutomata.serializar_jff(automata)
+        with open(ruta_salida, "w", encoding="utf-8") as f:
+            f.write(contenido)
 
     # =========================================================================
     # FORMATO .JSON (ESQUEMA ANEXO 3)
@@ -167,7 +171,7 @@ class FormatosAutomata:
             estados=set(data.get("estados", [])),
             estado_inicial=data.get("inicial"),
             estados_aceptacion=set(data.get("aceptacion", [])),
-            tipo=data.get("tipo", "AFD")
+            tipo=data.get("tipo", "AFD"),
         )
 
         for trans_data in data.get("transiciones", []):
@@ -189,7 +193,6 @@ class FormatosAutomata:
         """
         Exporta el autómata a formato .json estructurado conforme a la especificación oficial.
         """
-        # Agrupar transiciones con mismo origen y símbolo
         agrupadas: Dict[tuple[str, str], List[str]] = {}
         for t in automata.transiciones:
             clave = (t.origen, t.simbolo)
@@ -203,7 +206,7 @@ class FormatosAutomata:
             transiciones_json.append({
                 "desde": desde,
                 "lee": lee,
-                "hacia": sorted(destinos)
+                "hacia": sorted(destinos),
             })
 
         data = {
@@ -212,7 +215,7 @@ class FormatosAutomata:
             "estados": sorted(list(automata.estados)),
             "inicial": automata.estado_inicial,
             "aceptacion": sorted(list(automata.estados_aceptacion)),
-            "transiciones": transiciones_json
+            "transiciones": transiciones_json,
         }
 
         with open(ruta_salida, "w", encoding="utf-8") as f:
@@ -234,14 +237,12 @@ class FormatosAutomata:
 
         auto = Automata(tipo=root.attrib.get("tipo", "AFD"))
 
-        # Alfabeto
         alfabeto_elem = root.find("alfabeto")
         if alfabeto_elem is not None:
             for simb in alfabeto_elem.findall("simbolo"):
                 if simb.text:
                     auto.agregar_simbolo(simb.text.strip())
 
-        # Estados
         estados_elem = root.find("estados")
         if estados_elem is not None:
             for est in estados_elem.findall("estado"):
@@ -250,7 +251,6 @@ class FormatosAutomata:
                 es_fin = est.attrib.get("aceptacion", "false").lower() in ("true", "1")
                 auto.agregar_estado(nombre, es_inicial=es_ini, es_final=es_fin)
 
-        # Transiciones
         trans_elem = root.find("transiciones")
         if trans_elem is not None:
             for t in trans_elem.findall("transicion"):
@@ -269,13 +269,11 @@ class FormatosAutomata:
         """
         root = ET.Element("automata", tipo=automata.tipo)
 
-        # Alfabeto
         alfabeto_elem = ET.SubElement(root, "alfabeto")
         for simb in sorted(list(automata.alfabeto)):
             s_elem = ET.SubElement(alfabeto_elem, "simbolo")
             s_elem.text = simb
 
-        # Estados
         estados_elem = ET.SubElement(root, "estados")
         for est in sorted(list(automata.estados)):
             attrs = {"nombre": est}
@@ -285,7 +283,6 @@ class FormatosAutomata:
                 attrs["aceptacion"] = "true"
             ET.SubElement(estados_elem, "estado", **attrs)
 
-        # Transiciones
         trans_elem = ET.SubElement(root, "transiciones")
         for t in automata.transiciones:
             ET.SubElement(
@@ -293,11 +290,10 @@ class FormatosAutomata:
                 "transicion",
                 desde=t.origen,
                 lee=t.simbolo,
-                hacia=t.destino
+                hacia=t.destino,
             )
 
         xml_str = ET.tostring(root, encoding="utf-8")
         header = b'<?xml version="1.0" encoding="UTF-8"?>\n'
         with open(ruta_salida, "wb") as f:
             f.write(header + xml_str)
-

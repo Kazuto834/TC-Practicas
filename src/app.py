@@ -1,5 +1,5 @@
 """
-Módulo Principal de Integración — Suite de Teoría de la Computación (Prácticas 1, 2 y 3).
+gg Módulo Principal de Integración — Suite de Teoría de la Computación (Prácticas 1, 2, 3 y 4).
 Optimizado para entorno Docker con flet[web]==0.86.5.
 Incluye renderizado gráfico vectorial de autómatas (Canvas), tabla de transiciones (DataTable)
 y carga limpia de archivos .jff / .json / .xml sin mostrar código XML crudo.
@@ -61,6 +61,9 @@ try:
     from automata_a_er import automata_a_expresion_regular
 except ImportError:
     automata_a_expresion_regular = None
+
+# Módulos Práctica 4
+from vista_practica4 import crear_vista_practica4
 
 
 # =====================================================================
@@ -634,7 +637,7 @@ def crear_vista_bienvenida() -> ft.Control:
                     text_align=ft.TextAlign.CENTER,
                 ),
                 ft.Text(
-                    "Suite Integrada de Prácticas (Prácticas 1, 2 y 3)",
+                    "Suite Integrada de Prácticas (Prácticas 1, 2, 3 y 4)",
                     size=18,
                     color=ft.Colors.BLUE_300,
                     weight=ft.FontWeight.W_500,
@@ -1647,7 +1650,7 @@ def crear_vista_practica3(page: ft.Page) -> ft.Control:
 
 def main_integrada(page: ft.Page):
     """Arranca en la pantalla de bienvenida y cambia a cada práctica desde la barra inferior."""
-    page.title = "Teoría de la Computación — Suite Integrada (Prácticas 1, 2 y 3)"
+    page.title = "Teoría de la Computación — Suite Integrada (Prácticas 1, 2, 3 y 4)"
     page.padding = 20
     page.theme_mode = ft.ThemeMode.DARK
 
@@ -1666,6 +1669,13 @@ def main_integrada(page: ft.Page):
                 vistas_cache[2] = crear_vista_simulador(page)
             elif indice == 3:
                 vistas_cache[3] = crear_vista_practica3(page)
+            elif indice == 4:
+                vistas_cache[4] = crear_vista_practica4(
+                    page,
+                    construir_grafo_automata_canvas,
+                    construir_tabla_transiciones_visual,
+                    notificar,
+                )
 
         contenedor_dinamico.content = vistas_cache[indice]
         page.update()
@@ -1691,6 +1701,11 @@ def main_integrada(page: ft.Page):
                 icon=ft.Icons.ACCOUNT_TREE_OUTLINED,
                 selected_icon=ft.Icons.ACCOUNT_TREE,
                 label="Práctica 3: AFN y Minimiz.",
+            ),
+            ft.NavigationBarDestination(
+                icon=ft.Icons.FUNCTIONS_OUTLINED,
+                selected_icon=ft.Icons.FUNCTIONS,
+                label="Práctica 4: Expr. Regulares",
             ),
         ],
         selected_index=0,
