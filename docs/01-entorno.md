@@ -130,3 +130,34 @@ services:
     # Ejecuta pruebas con pytest al iniciar, al igual que el primer servicio
     command: pytest -q
 ```
+
+---
+
+## Práctica 2: Flujo de Ramas e Integración Continua con GitHub Actions
+
+### 1. Estrategia y Convención de Ramas
+En cumplimiento con las directivas de la Práctica 2, ninguna confirmación se realiza directamente sobre la rama principal (`master`/`main`). Cada módulo o funcionalidad se aísla en ramas temáticas por desarrollador:
+* `practica-02/A7LAS-1`: Motor formal (`src/automata.py`), pruebas unitarias (`tests/test_automata.py`) e investigación formal (`docs/04-investigacion.md`).
+* `practica-02/Kazuto834`: Módulo multiformato (`src/formatos.py`), interfaz gráfica (`src/gui_simulador.py`), integración (`src/integracion.py`), pruebas I/O (`tests/test_formatos.py`, `tests/test_pacman.py`) y modelo aplicado (`docs/05-del-articulo-al-automata.md`).
+
+### 2. Integración Continua (`.github/workflows/pruebas.yml`)
+Se automatizó la ejecución de la suite de pruebas mediante GitHub Actions en cada `push` y `pull_request` utilizando una matriz multiplataforma en Python:
+```yaml
+name: pruebas
+on: [push, pull_request]
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.version }}
+      - run: pip install -r requirements.txt
+      - run: pytest -q
+```
+La directiva `fail-fast: false` asegura que el fallo eventual en una versión no interrumpa la ejecución en las restantes, permitiendo evaluar el comportamiento diferencial en Python 3.11, 3.12 y 3.13.

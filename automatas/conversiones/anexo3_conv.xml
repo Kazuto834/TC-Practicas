@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<automata tipo="AFD"><alfabeto><simbolo>a</simbolo><simbolo>b</simbolo></alfabeto><estados><estado nombre="S0" inicial="true" aceptacion="true" /></estados><transiciones><transicion desde="S0" lee="a" hacia="S0" /><transicion desde="S0" lee="b" hacia="S0" /></transiciones></automata>

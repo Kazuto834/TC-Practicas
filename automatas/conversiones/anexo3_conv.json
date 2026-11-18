@@ -1,0 +1,30 @@
+{
+  "tipo": "AFD",
+  "alfabeto": [
+    "a",
+    "b"
+  ],
+  "estados": [
+    "S0"
+  ],
+  "inicial": "S0",
+  "aceptacion": [
+    "S0"
+  ],
+  "transiciones": [
+    {
+      "desde": "S0",
+      "lee": "a",
+      "hacia": [
+        "S0"
+      ]
+    },
+    {
+      "desde": "S0",
+      "lee": "b",
+      "hacia": [
+        "S0"
+      ]
+    }
+  ]
+}
