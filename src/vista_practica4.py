@@ -7,16 +7,18 @@ Autores: Antonio Navarro Domínguez (A7LAS-1) & Mario García Castillo (Kazuto83
 """
 
 from __future__ import annotations
+import asyncio
 import json
 import os
 import tempfile
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Set, Tuple
 import flet as ft
 
 from automata import Automata
 from formatos import FormatosAutomata
-from parser_er import ErrorSintacticoER
+from parser_er import ParserExpresionRegular, ErrorSintacticoER
 from er_a_automata import (
+    CompiladorThompson,
     er_a_pipeline_completo,
     exportar_automata_jff,
 )
@@ -43,7 +45,7 @@ MACROS_ESTANDAR: Dict[str, str] = {
 VALIDADORES_DEFECTO: Dict[str, Dict[str, str]] = {
     "correo": {
         "nombre": "Correo Electrónico Institucional / Estándar",
-        "er": "(L+D)(L+D+_+\\-+.)*@(L+D)(L+D+\\-)*(.[L][L]+)+",
+        "er": "(L+D)(L+D+_+\\-+.)*@(L+D)(L+D+\\-)*(.LLL*)(.LLL*)*",
         "ejemplo_valido": "antonio.navarro@alumno.ipn.mx",
         "ejemplo_invalido": "usuario@@dominio..com",
         "descripcion": "Valida usuario alfanumérico, arroba, dominio y extensión de al menos 2 letras.",
@@ -94,25 +96,45 @@ def _parsear_macros_usuario(texto_macros: str) -> Dict[str, str]:
     return macros
 
 
-def _evaluar_cadena_en_afd(afd: Automata, cadena: str) -> Tuple[bool, List[str]]:
-    """Simula una cadena sobre un AFD mínimo y retorna (aceptada, traza_estados)."""
-    if not afd.estado_inicial:
+def _simular_afn_lambda_rapido(afn: Automata, cadena: str) -> Tuple[bool, List[str]]:
+    """
+    Simula una cadena directamente sobre el AFN-λ de Thompson en tiempo O(|Q|·|w|),
+    evitando la explosión combinatoria de construir un DFA completo para alfabetos grandes.
+    """
+    if not afn.estado_inicial:
         return False, ["Sin estado inicial"]
 
-    tabla = afd.obtener_tabla_transiciones()
-    actual = afd.estado_inicial
-    traza = [actual]
+    trans_map: Dict[str, Dict[str, Set[str]]] = {}
+    for t in afn.transiciones:
+        simb = t.simbolo or ""
+        trans_map.setdefault(t.origen, {}).setdefault(simb, set()).add(t.destino)
+
+    def cerradura_lambda(conjunto: Set[str]) -> Set[str]:
+        res = set(conjunto)
+        pila = list(conjunto)
+        while pila:
+            est = pila.pop()
+            for sig in trans_map.get(est, {}).get("", ()):
+                if sig not in res:
+                    res.add(sig)
+                    pila.append(sig)
+        return res
+
+    actuales = cerradura_lambda({afn.estado_inicial})
+    traza = [f"Inicio ({len(actuales)} estados activos)"]
 
     for ch in cadena:
-        destinos = tabla.get(actual, {}).get(ch, set())
-        if not destinos:
-            traza.append(f"──({ch})──▶ ∅ (sin transición)")
+        siguientes: Set[str] = set()
+        for est in actuales:
+            siguientes.update(trans_map.get(est, {}).get(ch, ()))
+        actuales = cerradura_lambda(siguientes)
+        if not actuales:
+            traza.append(f"──('{ch}')──▶ ∅ (rechazo temprano)")
             return False, traza
-        siguiente = sorted(list(destinos))[0]
-        traza.append(f"──({ch})──▶ {siguiente}")
-        actual = siguiente
+        traza.append(f"──('{ch}')──▶ {len(actuales)} estados")
 
-    return (actual in afd.estados_aceptacion), traza
+    aceptada = bool(actuales & afn.estados_aceptacion)
+    return aceptada, traza
 
 
 def _parsear_automata_p4(contenido: str) -> Automata:
@@ -229,7 +251,6 @@ def crear_vista_practica4(
 ) -> ft.Control:
     """Construye la vista completa de la Práctica 4 (3 ejercicios)."""
 
-    # Pickers Web seguros para Flet 0.86.5
     picker_guardar_p4 = ft.FilePicker()
     picker_cargar_gnfa = ft.FilePicker()
     page.services.extend([picker_guardar_p4, picker_cargar_gnfa])
@@ -291,9 +312,20 @@ def crear_vista_practica4(
             txt_desc_validador.value = info["descripcion"]
             campo_er_validador.value = info["er"]
             campo_cadena_validar.value = info["ejemplo_valido"]
+            resultado_validador.controls = []
             page.update()
 
     dd_validador.on_select = al_seleccionar_validador
+
+    def cargar_ejemplo_valido_click(e):
+        clave = dd_validador.value
+        campo_cadena_validar.value = VALIDADORES_DEFECTO.get(clave, {}).get("ejemplo_valido", "")
+        page.update()
+
+    def cargar_ejemplo_invalido_click(e):
+        clave = dd_validador.value
+        campo_cadena_validar.value = VALIDADORES_DEFECTO.get(clave, {}).get("ejemplo_invalido", "")
+        page.update()
 
     def probar_validador_click(e):
         er = (campo_er_validador.value or "").strip()
@@ -301,9 +333,12 @@ def crear_vista_practica4(
         macros = _parsear_macros_usuario(campo_macros_validador.value or "")
 
         try:
-            pipeline = er_a_pipeline_completo(er, macros=macros)
-            afd_min = pipeline["afd_minimo"]
-            aceptada, traza = _evaluar_cadena_en_afd(afd_min, cadena)
+            parser = ParserExpresionRegular(er, macros=macros)
+            ast = parser.parsear()
+            compilador = CompiladorThompson()
+            afn_lambda = compilador.construir(ast)
+
+            aceptada, traza = _simular_afn_lambda_rapido(afn_lambda, cadena)
 
             badge_color = ft.Colors.GREEN_400 if aceptada else ft.Colors.RED_400
             veredicto = "CADENA VÁLIDA (ACEPTADA) ✔" if aceptada else "CADENA INVÁLIDA (RECHAZADA) ✘"
@@ -319,11 +354,11 @@ def crear_vista_practica4(
                             ft.Text(veredicto, size=16, weight=ft.FontWeight.BOLD, color=badge_color),
                             ft.Text(
                                 f"Cadena evaluada: '{cadena if cadena else 'λ'}'  |  "
-                                f"Estados del AFD mínimo: {len(afd_min.estados)}",
+                                f"Estados AFN-λ (Thompson): {len(afn_lambda.estados)}",
                                 size=13,
                             ),
                             ft.Text(
-                                "Recorrido: " + " ".join(traza),
+                                "Traza: " + " ".join(traza),
                                 size=12,
                                 font_family="monospace",
                                 color=ft.Colors.GREY_300,
@@ -369,26 +404,12 @@ def crear_vista_practica4(
                                     ft.OutlinedButton(
                                         "Cargar Ejemplo Válido",
                                         icon=ft.Icons.CHECK,
-                                        on_click=lambda _: (
-                                            setattr(
-                                                campo_cadena_validar,
-                                                "value",
-                                                VALIDADORES_DEFECTO.get(dd_validador.value, {}).get("ejemplo_valido", ""),
-                                            ),
-                                            page.update(),
-                                        ),
+                                        on_click=cargar_ejemplo_valido_click,
                                     ),
                                     ft.OutlinedButton(
                                         "Cargar Ejemplo Inválido",
                                         icon=ft.Icons.CLOSE,
-                                        on_click=lambda _: (
-                                            setattr(
-                                                campo_cadena_validar,
-                                                "value",
-                                                VALIDADORES_DEFECTO.get(dd_validador.value, {}).get("ejemplo_invalido", ""),
-                                            ),
-                                            page.update(),
-                                        ),
+                                        on_click=cargar_ejemplo_invalido_click,
                                     ),
                                 ],
                                 wrap=True,
@@ -564,11 +585,16 @@ def crear_vista_practica4(
 
     dd_etapa_ej2.on_select = renderizar_etapa_ej2
 
-    def convertir_er_a_automata_click(e):
+    async def convertir_er_a_automata_click(e):
         er = (campo_er_ej2.value or "").strip()
         macros = _parsear_macros_usuario(campo_macros_ej2.value or "")
+        contenedor_res_ej2.controls = [
+            ft.Row([ft.ProgressRing(width=20, height=20), ft.Text("Compilando expresión regular...")])
+        ]
+        page.update()
+
         try:
-            pipe = er_a_pipeline_completo(er, macros=macros)
+            pipe = await asyncio.to_thread(er_a_pipeline_completo, er, macros=macros)
             estado_ej2["pipeline"] = pipe
             btn_descargar_jff_ej2.disabled = False
             renderizar_etapa_ej2()
@@ -773,7 +799,12 @@ q2, b -> q1"""
         except Exception as ex:
             notificar(page, f"Error al cargar archivo: {ex}", True)
 
-    def convertir_automata_a_er_click(e):
+    async def convertir_automata_a_er_click(e):
+        contenedor_res_ej3.controls = [
+            ft.Row([ft.ProgressRing(width=20, height=20), ft.Text("Eliminando estados en el GNFA...")])
+        ]
+        page.update()
+
         try:
             auto = (
                 estado_gnfa["auto_archivo"]
@@ -785,11 +816,12 @@ q2, b -> q1"""
             orden_raw = (campo_orden_eliminacion.value or "").strip()
             orden = [x.strip() for x in orden_raw.split(",") if x.strip()] if orden_raw else None
 
-            er_final, historial = automata_a_expresion_regular(auto, orden_eliminacion=orden)
+            er_final, historial = await asyncio.to_thread(
+                automata_a_expresion_regular, auto, orden
+            )
 
             controles: List[ft.Control] = []
 
-            # Aviso de verificación de determinismo (estado y símbolo conflictivo si aplica)
             color_det = ft.Colors.GREEN_400 if det_info["es_determinista"] else ft.Colors.AMBER_300
             controles.append(
                 ft.Container(
@@ -809,7 +841,6 @@ q2, b -> q1"""
                 )
             )
 
-            # Resultado principal de ER obtenida
             controles.append(
                 ft.Container(
                     padding=14,
@@ -833,10 +864,9 @@ q2, b -> q1"""
                 )
             )
 
-            # Comparación opcional con ER obtenida en JFLAP
             er_jflap = (campo_er_jflap.value or "").strip()
             if er_jflap:
-                comp = comparar_expresiones_regulares(er_final, er_jflap)
+                comp = await asyncio.to_thread(comparar_expresiones_regulares, er_final, er_jflap)
                 c_eq = ft.Colors.GREEN_400 if comp["equivalentes"] else ft.Colors.RED_400
                 controles.append(
                     ft.Container(
@@ -859,7 +889,6 @@ q2, b -> q1"""
                     )
                 )
 
-            # Pasos de eliminación progresiva de estados en el GNFA
             for idx, paso in enumerate(historial, start=1):
                 gnfa_snap = paso.get("gnfa_automata")
                 bloque_paso: List[ft.Control] = [
@@ -947,9 +976,13 @@ q2, b -> q1"""
     }
     contenedor_ejercicio = ft.Container(content=vista_ej1, expand=True)
 
-    btn_tab_1 = ft.Button("1. Validadores con ER", icon=ft.Icons.SPELLCHECK)
-    btn_tab_2 = ft.OutlinedButton("2. ER → Autómata (Thompson)", icon=ft.Icons.ACCOUNT_TREE)
-    btn_tab_3 = ft.OutlinedButton("3. Autómata → ER (GNFA)", icon=ft.Icons.FUNCTIONS)
+    btn_tab_1 = ft.Button(
+        "1. Validadores con ER",
+        icon=ft.Icons.SPELLCHECK,
+        style=ft.ButtonStyle(bgcolor=ft.Colors.BLUE_700, color=ft.Colors.WHITE),
+    )
+    btn_tab_2 = ft.Button("2. ER → Autómata (Thompson)", icon=ft.Icons.ACCOUNT_TREE)
+    btn_tab_3 = ft.Button("3. Autómata → ER (GNFA)", icon=ft.Icons.FUNCTIONS)
 
     def seleccionar_ejercicio(num: int):
         contenedor_ejercicio.content = vistas_ejercicios[num]
